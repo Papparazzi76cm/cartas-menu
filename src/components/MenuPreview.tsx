@@ -12,6 +12,7 @@ interface MenuPreviewProps {
 interface RenderedPage {
   type: "cover" | "content" | "footer";
   sections?: { categoryName: string; items: MenuItem[]; fontScale: number }[];
+  footerText?: string;
 }
 
 /**
@@ -73,8 +74,12 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
     }
   }
 
-  if (menu.footer) {
-    pages.push({ type: "footer" });
+  // Attach footer text to the last content page instead of a separate page
+  if (menu.footer && pages.length > 1) {
+    const lastContent = pages[pages.length - 1];
+    if (lastContent.type === "content") {
+      lastContent.footerText = menu.footer;
+    }
   }
 
   return pages;
@@ -136,34 +141,41 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
           )}
 
           {page.type === "content" && page.sections && (
-            <div style={contentStyle} className="flex flex-col justify-start">
-              {page.sections.map((section, si) => (
-                <div key={si} className="flex-1 flex flex-col">
-                  {/* Category header — scales title too */}
-                  <div className="text-center mb-6 pt-2">
-                    <div className="menu-ornament w-16 mx-auto mb-4" />
-                    <h2
-                      className="font-display font-semibold text-menu-title tracking-wide"
-                      style={{ fontSize: `${1.5 * section.fontScale}rem` }}
-                    >
-                      {section.categoryName}
-                    </h2>
-                    <div className="menu-ornament w-16 mx-auto mt-4" />
+            <div style={contentStyle} className="flex flex-col justify-start h-full">
+              <div className="flex-1 flex flex-col">
+                {page.sections.map((section, si) => (
+                  <div key={si} className="flex-1 flex flex-col">
+                    <div className="text-center mb-6 pt-2">
+                      <div className="menu-ornament w-16 mx-auto mb-4" />
+                      <h2
+                        className="font-display font-semibold text-menu-title tracking-wide"
+                        style={{ fontSize: `${1.5 * section.fontScale}rem` }}
+                      >
+                        {section.categoryName}
+                      </h2>
+                      <div className="menu-ornament w-16 mx-auto mt-4" />
+                    </div>
+                    <div className="flex-1" style={{ gap: `${1 * section.fontScale}rem`, display: "flex", flexDirection: "column" }}>
+                      {section.items.map((item) => (
+                        <MenuItemRow
+                          key={item.id}
+                          item={item}
+                          fontScale={section.fontScale}
+                          isSelected={selectedItemId === item.id}
+                          onClick={() => onSelectItem?.(item.id)}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  {/* Items */}
-                  <div className="flex-1" style={{ gap: `${1 * section.fontScale}rem`, display: "flex", flexDirection: "column" }}>
-                    {section.items.map((item) => (
-                      <MenuItemRow
-                        key={item.id}
-                        item={item}
-                        fontScale={section.fontScale}
-                        isSelected={selectedItemId === item.id}
-                        onClick={() => onSelectItem?.(item.id)}
-                      />
-                    ))}
-                  </div>
+                ))}
+              </div>
+              {page.footerText && (
+                <div className="mt-auto pt-4 border-t border-menu-divider/30">
+                  <p className="font-menu text-sm text-menu-description text-center leading-relaxed italic">
+                    {page.footerText}
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
           )}
 
