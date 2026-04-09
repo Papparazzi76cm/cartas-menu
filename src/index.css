@@ -79,13 +79,13 @@
 
 @layer utilities {
   .font-display {
-    font-family: 'Playfair Display', serif;
+    font-family: var(--font-display, 'Playfair Display', serif);
   }
   .font-menu {
-    font-family: 'Cormorant Garamond', serif;
+    font-family: var(--font-menu, 'Cormorant Garamond', serif);
   }
   .font-body {
-    font-family: 'Inter', sans-serif;
+    font-family: var(--font-body, 'Inter', sans-serif);
   }
   .menu-ornament {
     background: linear-gradient(90deg, transparent, hsl(var(--menu-ornament)), transparent);
