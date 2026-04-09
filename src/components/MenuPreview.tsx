@@ -295,7 +295,7 @@ function MenuPageContainer({ children, widthPx, heightPx }: { children: React.Re
   );
 }
 
-function MenuItemRow({ item, fontScale, isSelected, onClick, compact }: { item: MenuItem; fontScale: number; isSelected: boolean; onClick: () => void; compact?: boolean }) {
+function MenuItemRow({ item, fontScale, isSelected, onClick, compact, pageStyle }: { item: MenuItem; fontScale: number; isSelected: boolean; onClick: () => void; compact?: boolean; pageStyle?: PageStyle }) {
   const nameSize = (compact ? 12 : 15) * fontScale;
   const descSize = (compact ? 10 : 13) * fontScale;
   const priceSize = (compact ? 11 : 14) * fontScale;
@@ -304,6 +304,8 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact }: { item: 
   const allergenSize = (compact ? 7 : 9) * fontScale;
   const py = (compact ? 3 : 8) * fontScale;
   const px = (compact ? 4 : 12) * fontScale;
+  const titleColor = pageStyle?.color ? { color: `hsl(${pageStyle.color})` } : {};
+  const fontFam = pageStyle?.fontFamily ? { fontFamily: pageStyle.fontFamily } : {};
 
   return (
     <div
