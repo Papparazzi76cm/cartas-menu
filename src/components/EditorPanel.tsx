@@ -782,8 +782,9 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
                       >
                         <Plus className="w-3 h-3" /> Añadir categoría
                       </button>
-                    </div>
-                  ))}
+                      </SortablePageBlock>
+                    ))}
+                  </SortableContext>
                 </SortableContext>
               </SortableContext>
 
