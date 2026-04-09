@@ -1,4 +1,5 @@
-import { MenuData, MenuCategory, MenuItem } from "@/types/menu";
+import { useMemo } from "react";
+import { MenuData, MenuCategory, MenuItem, PAGE_FORMATS, PRINT_MARGINS, MAX_ITEMS_PER_PAGE } from "@/types/menu";
 import { motion } from "framer-motion";
 
 interface MenuPreviewProps {
@@ -7,92 +8,174 @@ interface MenuPreviewProps {
   onSelectItem?: (id: string) => void;
 }
 
+/** Represents one rendered page */
+interface RenderedPage {
+  type: "cover" | "content" | "footer";
+  sections?: { categoryName: string; items: MenuItem[] }[];
+}
+
+/**
+ * Pagination engine:
+ * - Each section (category) never shares a page with another section.
+ * - Max 6 items per page. If a section has >6 items, it splits into chunks of 6.
+ * - Sections with 1-6 items occupy exactly one page.
+ */
+function paginateMenu(menu: MenuData): RenderedPage[] {
+  const pages: RenderedPage[] = [];
+
+  // Cover page
+  pages.push({ type: "cover" });
+
+  // Content pages — flatten all categories across all menu.pages
+  const allCategories: MenuCategory[] = [];
+  for (const page of menu.pages) {
+    for (const cat of page.categories) {
+      allCategories.push(cat);
+    }
+  }
+
+  for (const cat of allCategories) {
+    if (cat.items.length === 0) continue;
+
+    // Split into chunks of MAX_ITEMS_PER_PAGE
+    const chunks: MenuItem[][] = [];
+    for (let i = 0; i < cat.items.length; i += MAX_ITEMS_PER_PAGE) {
+      chunks.push(cat.items.slice(i, i + MAX_ITEMS_PER_PAGE));
+    }
+
+    for (const chunk of chunks) {
+      pages.push({
+        type: "content",
+        sections: [{ categoryName: cat.name, items: chunk }],
+      });
+    }
+  }
+
+  // Footer page
+  if (menu.footer) {
+    pages.push({ type: "footer" });
+  }
+
+  return pages;
+}
+
+/** Convert mm to CSS px at 96 DPI (screen) — 1mm ≈ 3.7795px */
+const MM_TO_PX = 3.7795;
+
 export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewProps) {
+  const renderedPages = useMemo(() => paginateMenu(menu), [menu]);
+  const format = PAGE_FORMATS[menu.pageFormat];
+  const pageWidthPx = format.widthMM * MM_TO_PX;
+  const pageHeightPx = format.heightMM * MM_TO_PX;
+
+  const paddingTop = PRINT_MARGINS.top * MM_TO_PX;
+  const paddingBottom = PRINT_MARGINS.bottom * MM_TO_PX;
+  const paddingLeft = PRINT_MARGINS.left * MM_TO_PX;
+  const paddingRight = PRINT_MARGINS.right * MM_TO_PX;
+
+  const contentStyle: React.CSSProperties = {
+    paddingTop,
+    paddingBottom,
+    paddingLeft,
+    paddingRight,
+    width: "100%",
+    height: "100%",
+    boxSizing: "border-box",
+    overflow: "hidden",
+  };
+
   return (
     <div className="flex flex-col items-center gap-8 py-8">
-      {/* Cover Page */}
-      <MenuPageContainer>
-        <div className="flex flex-col items-center justify-center h-full text-center px-12">
-          <div className="menu-ornament-thick w-24 mb-10" />
-          <h1 className="font-display text-5xl font-semibold text-menu-title tracking-wide leading-tight">
-            {menu.restaurantName}
-          </h1>
-          {menu.subtitle && (
-            <p className="font-menu text-2xl text-menu-subtitle mt-3 italic tracking-widest">
-              {menu.subtitle}
-            </p>
+      {renderedPages.map((page, idx) => (
+        <MenuPageContainer key={idx} widthPx={pageWidthPx} heightPx={pageHeightPx}>
+          {page.type === "cover" && (
+            <div style={contentStyle} className="flex flex-col items-center justify-center text-center">
+              <div className="menu-ornament-thick w-24 mb-10" />
+              <h1 className="font-display text-5xl font-semibold text-menu-title tracking-wide leading-tight">
+                {menu.restaurantName}
+              </h1>
+              {menu.subtitle && (
+                <p className="font-menu text-2xl text-menu-subtitle mt-3 italic tracking-widest">
+                  {menu.subtitle}
+                </p>
+              )}
+              <div className="menu-ornament w-40 my-8" />
+              {menu.seasonLabel && (
+                <p className="font-menu text-lg text-menu-subtitle tracking-[0.3em] uppercase">
+                  {menu.seasonLabel}
+                </p>
+              )}
+              {menu.description && (
+                <p className="font-menu text-base text-menu-description mt-8 max-w-md leading-relaxed italic">
+                  {menu.description}
+                </p>
+              )}
+              <div className="menu-ornament-thick w-24 mt-10" />
+            </div>
           )}
-          <div className="menu-ornament w-40 my-8" />
-          {menu.seasonLabel && (
-            <p className="font-menu text-lg text-menu-subtitle tracking-[0.3em] uppercase">
-              {menu.seasonLabel}
-            </p>
-          )}
-          {menu.description && (
-            <p className="font-menu text-base text-menu-description mt-8 max-w-md leading-relaxed italic">
-              {menu.description}
-            </p>
-          )}
-          <div className="menu-ornament-thick w-24 mt-10" />
-        </div>
-      </MenuPageContainer>
 
-      {/* Content Pages */}
-      {menu.pages.map((page) => (
-        <MenuPageContainer key={page.id}>
-          <div className="px-10 py-10">
-            {page.categories.map((cat, ci) => (
-              <div key={cat.id} className={ci > 0 ? "mt-10" : ""}>
-                <div className="text-center mb-6">
-                  <div className="menu-ornament w-16 mx-auto mb-4" />
-                  <h2 className="font-display text-2xl font-semibold text-menu-title tracking-wide">
-                    {cat.name}
-                  </h2>
-                  <div className="menu-ornament w-16 mx-auto mt-4" />
+          {page.type === "content" && page.sections && (
+            <div style={contentStyle} className="flex flex-col justify-start">
+              {page.sections.map((section, si) => (
+                <div key={si} className="flex-1 flex flex-col">
+                  {/* Category header */}
+                  <div className="text-center mb-6 pt-2">
+                    <div className="menu-ornament w-16 mx-auto mb-4" />
+                    <h2 className="font-display text-2xl font-semibold text-menu-title tracking-wide">
+                      {section.categoryName}
+                    </h2>
+                    <div className="menu-ornament w-16 mx-auto mt-4" />
+                  </div>
+                  {/* Items */}
+                  <div className="space-y-4 flex-1">
+                    {section.items.map((item) => (
+                      <MenuItemRow
+                        key={item.id}
+                        item={item}
+                        isSelected={selectedItemId === item.id}
+                        onClick={() => onSelectItem?.(item.id)}
+                      />
+                    ))}
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  {cat.items.map((item) => (
-                    <MenuItemRow
-                      key={item.id}
-                      item={item}
-                      isSelected={selectedItemId === item.id}
-                      onClick={() => onSelectItem?.(item.id)}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
+
+          {page.type === "footer" && (
+            <div style={contentStyle} className="flex items-center justify-center">
+              <p className="font-menu text-sm text-menu-description text-center leading-relaxed italic">
+                {menu.footer}
+              </p>
+            </div>
+          )}
         </MenuPageContainer>
       ))}
-
-      {/* Footer Page */}
-      {menu.footer && (
-        <MenuPageContainer>
-          <div className="flex items-center justify-center h-full px-12">
-            <p className="font-menu text-sm text-menu-description text-center leading-relaxed italic">
-              {menu.footer}
-            </p>
-          </div>
-        </MenuPageContainer>
-      )}
     </div>
   );
 }
 
-function MenuPageContainer({ children }: { children: React.ReactNode }) {
+function MenuPageContainer({ children, widthPx, heightPx }: { children: React.ReactNode; widthPx: number; heightPx: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       data-menu-page
-      className="bg-menu-bg w-[595px] min-h-[842px] shadow-xl rounded-sm border border-border/50 relative overflow-hidden flex flex-col"
-      style={{ aspectRatio: "210/297" }}
+      className="bg-menu-bg shadow-xl rounded-sm border border-border/50 relative overflow-hidden"
+      style={{ width: widthPx, height: heightPx }}
     >
-      {/* Subtle border frame */}
-      <div className="absolute inset-3 border border-menu-divider/30 pointer-events-none rounded-sm" />
-      <div className="flex-1 flex flex-col justify-center relative z-10">
+      {/* Decorative inner border — respects print margins */}
+      <div
+        className="absolute border border-menu-divider/30 pointer-events-none rounded-sm"
+        style={{
+          top: PRINT_MARGINS.top * MM_TO_PX * 0.6,
+          left: PRINT_MARGINS.left * MM_TO_PX * 0.6,
+          right: PRINT_MARGINS.right * MM_TO_PX * 0.6,
+          bottom: PRINT_MARGINS.bottom * MM_TO_PX * 0.6,
+        }}
+      />
+      <div className="relative z-10 w-full h-full">
         {children}
       </div>
     </motion.div>
@@ -107,7 +190,6 @@ function MenuItemRow({ item, isSelected, onClick }: { item: MenuItem; isSelected
         isSelected ? "bg-accent/10 ring-1 ring-accent/30" : "hover:bg-accent/5"
       }`}
     >
-      {/* Tags */}
       {item.tags.length > 0 && (
         <div className="flex gap-1.5 mb-1">
           {item.tags.map((tag) => (
@@ -118,9 +200,8 @@ function MenuItemRow({ item, isSelected, onClick }: { item: MenuItem; isSelected
         </div>
       )}
 
-      {/* Name + Price row */}
       <div className="flex items-baseline gap-2">
-        <h3 className="font-menu text-[15px] font-semibold text-menu-title flex-1 leading-snug">
+        <h3 className="font-menu text-[15px] font-semibold text-menu-title flex-shrink-0 leading-snug">
           {item.name}
         </h3>
         <div className="flex-shrink-0 border-b border-dotted border-menu-divider/50 flex-1 min-w-[20px] mx-1 mb-1" />
@@ -129,26 +210,22 @@ function MenuItemRow({ item, isSelected, onClick }: { item: MenuItem; isSelected
         </span>
       </div>
 
-      {/* Half price */}
       {item.halfPrice && (
         <p className="font-body text-xs text-menu-description ml-0 mt-0.5">
           ½ ración: {item.halfPrice}
         </p>
       )}
 
-      {/* Unit */}
       {item.unit && (
         <p className="font-body text-xs text-menu-description mt-0.5">{item.unit}</p>
       )}
 
-      {/* Description */}
       {item.description && (
         <p className="font-menu text-[13px] text-menu-description italic mt-1 leading-relaxed">
           {item.description}
         </p>
       )}
 
-      {/* Allergens */}
       {item.allergens.length > 0 && (
         <div className="flex flex-wrap gap-1 mt-1.5">
           {item.allergens.map((a) => (
