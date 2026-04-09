@@ -239,6 +239,26 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
     onChange({ ...menu, pages });
   };
 
+  const updateCategoryName = (catId: string, newName: string) => {
+    const loc = findCatLocation(menu, catId);
+    if (!loc) return;
+    const pages = clonePages(menu);
+    pages[loc.pi].categories[loc.ci].name = newName;
+    onChange({ ...menu, pages });
+  };
+
+  const addSection = () => {
+    const newCatId = Math.random().toString(36).slice(2, 10);
+    const pages = clonePages(menu);
+    pages.push({
+      id: Math.random().toString(36).slice(2, 10),
+      title: "Nueva sección",
+      categories: [{ id: newCatId, name: "Nueva sección", items: [] }],
+    });
+    onChange({ ...menu, pages });
+    setExpandedCategories((prev) => new Set(prev).add(newCatId));
+  };
+
   const addPage = () => {
     onChange({
       ...menu,
@@ -533,6 +553,7 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
                               cat={cat}
                               isExpanded={isExpanded}
                               onToggle={() => toggleCategory(cat.id)}
+                              onRename={(name) => updateCategoryName(cat.id, name)}
                             />
                             <AnimatePresence>
                               {isExpanded && (
