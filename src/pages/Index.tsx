@@ -13,6 +13,7 @@ import { toast } from "sonner";
 
 export default function Index() {
   const [menu, setMenu] = useState<MenuData>(sampleMenu);
+  const [currentMenuId, setCurrentMenuId] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [exporting, setExporting] = useState(false);
