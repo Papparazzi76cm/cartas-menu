@@ -600,7 +600,66 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
                         <span className="text-xs font-semibold text-foreground flex-1">
                           {page.title || `Página ${pi + 1}`}
                         </span>
+                        <button
+                          onClick={() => {
+                            setExpandedCategories((prev) => {
+                              const next = new Set(prev);
+                              const key = `page-style-${page.id}`;
+                              next.has(key) ? next.delete(key) : next.add(key);
+                              return next;
+                            });
+                          }}
+                          title="Estilo de página"
+                          className="hover:text-accent transition-colors"
+                        >
+                          <Palette className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
                       </div>
+                      {/* Page style editor */}
+                      {expandedCategories.has(`page-style-${page.id}`) && (
+                        <div className="bg-accent/5 border-b border-border/50 px-3 py-2 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <label className="text-[10px] font-medium text-muted-foreground uppercase w-20">Tamaño</label>
+                            <input
+                              type="range"
+                              min="0.6"
+                              max="1.6"
+                              step="0.05"
+                              value={page.style?.fontSize ?? 1}
+                              onChange={(e) => updatePageStyle(pi, { fontSize: parseFloat(e.target.value) })}
+                              className="flex-1 h-1.5 accent-accent"
+                            />
+                            <span className="text-[10px] text-muted-foreground w-8 text-right">
+                              {Math.round((page.style?.fontSize ?? 1) * 100)}%
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <label className="text-[10px] font-medium text-muted-foreground uppercase w-20">Tipografía</label>
+                            <select
+                              value={page.style?.fontFamily ?? ""}
+                              onChange={(e) => updatePageStyle(pi, { fontFamily: e.target.value || undefined })}
+                              className="flex-1 text-[10px] bg-background border border-input rounded px-1.5 py-1 outline-none focus:ring-1 focus:ring-ring"
+                            >
+                              <option value="">Por defecto (tema)</option>
+                              {["Playfair Display", "Cormorant Garamond", "Bodoni Moda", "Lora", "Libre Baskerville", "Source Serif 4", "DM Serif Display", "Crimson Text", "Noto Serif", "Merriweather", "EB Garamond"].map((f) => (
+                                <option key={f} value={`'${f}', serif`}>{f}</option>
+                              ))}
+                              {["Inter", "DM Sans", "Nunito Sans", "Work Sans", "Noto Sans", "Raleway", "Montserrat", "Open Sans"].map((f) => (
+                                <option key={f} value={`'${f}', sans-serif`}>{f}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <label className="text-[10px] font-medium text-muted-foreground uppercase w-20">Color título</label>
+                            <input
+                              type="color"
+                              value={page.style?.color ? hslToHex(page.style.color) : "#1a1a1a"}
+                              onChange={(e) => updatePageStyle(pi, { color: hexToHsl(e.target.value) })}
+                              className="w-6 h-6 rounded border border-input cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      )}
                       {page.categories.map((cat) => {
                         const isExpanded = expandedCategories.has(cat.id);
                         return (
