@@ -281,15 +281,15 @@ function MenuPageContainer({ children, widthPx, heightPx }: { children: React.Re
   );
 }
 
-function MenuItemRow({ item, fontScale, isSelected, onClick }: { item: MenuItem; fontScale: number; isSelected: boolean; onClick: () => void }) {
-  const nameSize = 15 * fontScale;
-  const descSize = 13 * fontScale;
-  const priceSize = 14 * fontScale;
-  const metaSize = 12 * fontScale;
-  const tagSize = 9 * fontScale;
-  const allergenSize = 9 * fontScale;
-  const py = 8 * fontScale;
-  const px = 12 * fontScale;
+function MenuItemRow({ item, fontScale, isSelected, onClick, compact }: { item: MenuItem; fontScale: number; isSelected: boolean; onClick: () => void; compact?: boolean }) {
+  const nameSize = (compact ? 12 : 15) * fontScale;
+  const descSize = (compact ? 10 : 13) * fontScale;
+  const priceSize = (compact ? 11 : 14) * fontScale;
+  const metaSize = (compact ? 9 : 12) * fontScale;
+  const tagSize = (compact ? 7 : 9) * fontScale;
+  const allergenSize = (compact ? 7 : 9) * fontScale;
+  const py = (compact ? 3 : 8) * fontScale;
+  const px = (compact ? 4 : 12) * fontScale;
 
   return (
     <div
