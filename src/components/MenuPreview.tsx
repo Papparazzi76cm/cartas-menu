@@ -138,9 +138,13 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
           {page.type === "cover" && (
             <div style={contentStyle} className="flex flex-col items-center justify-center text-center">
               <div className="menu-ornament-thick w-24 mb-10" />
-              <h1 className="font-display text-5xl font-semibold text-menu-title tracking-wide leading-tight">
-                {menu.restaurantName}
-              </h1>
+              {menu.logoUrl ? (
+                <img src={menu.logoUrl} alt={menu.restaurantName} className="max-h-32 max-w-[80%] object-contain" />
+              ) : (
+                <h1 className="font-display text-5xl font-semibold text-menu-title tracking-wide leading-tight">
+                  {menu.restaurantName}
+                </h1>
+              )}
               {menu.subtitle && (
                 <p className="font-menu text-2xl text-menu-subtitle mt-3 italic tracking-widest">
                   {menu.subtitle}

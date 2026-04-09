@@ -57,6 +57,7 @@ export const MAX_ITEMS_PER_PAGE = 6;
 
 export interface MenuData {
   restaurantName: string;
+  logoUrl?: string;
   subtitle?: string;
   seasonLabel?: string;
   description?: string;

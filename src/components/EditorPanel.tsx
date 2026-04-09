@@ -4,7 +4,7 @@ import { MENU_THEMES } from "@/lib/themes";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, Plus, Trash2, GripVertical, FileText, Settings, Layers, Palette, Type } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trash2, GripVertical, FileText, Settings, Layers, Palette, Type, Upload, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DndContext,
@@ -571,8 +571,43 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
               </select>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Nombre del restaurante</label>
-              <Input value={menu.restaurantName} onChange={(e) => updateRestaurantField("restaurantName", e.target.value)} className="mt-1" />
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Portada: nombre o logo</label>
+              {menu.logoUrl ? (
+                <div className="mt-1 space-y-2">
+                  <div className="relative border border-input rounded-md p-2 bg-muted/30">
+                    <img src={menu.logoUrl} alt="Logo" className="max-h-20 mx-auto object-contain" />
+                    <button
+                      onClick={() => onChange({ ...menu, logoUrl: undefined })}
+                      className="absolute top-1 right-1 p-0.5 rounded-full bg-destructive/80 text-destructive-foreground hover:bg-destructive"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground text-center">Se mostrará el logo en lugar del nombre</p>
+                </div>
+              ) : (
+                <div className="mt-1 space-y-2">
+                  <Input value={menu.restaurantName} onChange={(e) => updateRestaurantField("restaurantName", e.target.value)} />
+                  <label className="flex items-center gap-2 cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    <Upload className="h-3.5 w-3.5" />
+                    <span>Subir logo en su lugar</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          onChange({ ...menu, logoUrl: ev.target?.result as string });
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Subtítulo</label>
