@@ -23,6 +23,12 @@ export interface MenuCategory {
   pagesSpan?: number;
 }
 
+export interface PageStyle {
+  fontSize?: number; // multiplier, default 1
+  fontFamily?: string; // CSS font-family override
+  color?: string; // HSL color for titles
+}
+
 export interface MenuPage {
   id: string;
   title?: string;
@@ -30,6 +36,8 @@ export interface MenuPage {
   categories: MenuCategory[];
   /** Number of columns for this page layout (default 1) */
   columns?: number;
+  /** Per-page style overrides */
+  style?: PageStyle;
 }
 
 export type PageFormat = 'A4' | 'A5' | 'A3' | 'Letter';
