@@ -239,6 +239,35 @@ function SortableCategoryHeader({
   );
 }
 
+function SortablePageBlock({ page, pi, children }: { page: { id: string }; pi: number; children: React.ReactNode }) {
+  const { setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `page-${page.id}`,
+    data: { type: "page", page },
+  });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="border border-border rounded-lg overflow-hidden">
+      {children}
+    </div>
+  );
+}
+
+function SortablePageHandle({ pageId }: { pageId: string }) {
+  const { attributes, listeners } = useSortable({
+    id: `page-${pageId}`,
+    data: { type: "page" },
+  });
+  return (
+    <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none">
+      <GripVertical className="w-3.5 h-3.5 text-muted-foreground/60" />
+    </button>
+  );
+}
+
 function EditableText({ value, onChange, className }: { value: string; onChange: (v: string) => void; className?: string }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(value);
