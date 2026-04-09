@@ -35,14 +35,28 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
     const cats = menuPage.categories.filter((c) => c.items.length > 0);
     if (cats.length === 0) continue;
 
-    // Check if all categories in this page fit together on one rendered page
-    // Allow up to ~8 items combined (with font scaling) when multiple categories share a page
+    const cols = menuPage.columns || 1;
+
+    if (cols >= 2) {
+      // Multi-column page: all categories on one page, font scaled to fit
+      const totalItems = cats.reduce((sum, c) => sum + c.items.length, 0);
+      const maxPerCol = Math.ceil(totalItems / cols);
+      const density = maxPerCol / MAX_ITEMS_PER_PAGE;
+      const fontScale = Math.min(1.1, Math.max(0.5, 1 / density));
+      pages.push({
+        type: "content",
+        columns: cols,
+        sections: cats.map((cat) => ({ categoryName: cat.name, items: cat.items, fontScale })),
+      });
+      continue;
+    }
+
+    // Single-column logic
     const totalItems = cats.reduce((sum, c) => sum + c.items.length, 0);
-    const maxCombined = MAX_ITEMS_PER_PAGE + 2; // 8 items max on a combined page
+    const maxCombined = MAX_ITEMS_PER_PAGE + 2;
     const allFitOnOne = totalItems <= maxCombined && cats.length > 1 && cats.every((c) => !c.pagesSpan || c.pagesSpan === 1);
 
     if (allFitOnOne) {
-      // Combine multiple small categories onto a single page
       const density = totalItems / MAX_ITEMS_PER_PAGE;
       const fontScale = Math.min(1.3, Math.max(0.65, 1 / density));
       pages.push({
@@ -50,7 +64,6 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
         sections: cats.map((cat) => ({ categoryName: cat.name, items: cat.items, fontScale })),
       });
     } else {
-      // Process each category independently
       for (const cat of cats) {
         const naturalPages = autoPageCount(cat.items.length);
         const targetPages = cat.pagesSpan && cat.pagesSpan >= 1 ? cat.pagesSpan : naturalPages;
