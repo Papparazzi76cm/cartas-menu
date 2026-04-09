@@ -267,6 +267,14 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
     onChange({ ...menu, pages });
   };
 
+  const updateCategoryPagesSpan = (catId: string, span: number | undefined) => {
+    const loc = findCatLocation(menu, catId);
+    if (!loc) return;
+    const pages = clonePages(menu);
+    pages[loc.pi].categories[loc.ci].pagesSpan = span;
+    onChange({ ...menu, pages });
+  };
+
   const addSection = () => {
     const newCatId = Math.random().toString(36).slice(2, 10);
     const pages = clonePages(menu);
