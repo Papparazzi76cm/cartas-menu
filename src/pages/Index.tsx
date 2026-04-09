@@ -32,7 +32,7 @@ function applyTheme(themeId?: string) {
   root.style.setProperty("--menu-allergen-text", theme.colors.menuAllergenText);
 
   // Load font
-  const existingLink = document.querySelector('link[data-theme-font]');
+  const existingLink = document.querySelector("link[data-theme-font]");
   if (existingLink) existingLink.remove();
   const link = document.createElement("link");
   link.rel = "stylesheet";
@@ -67,28 +67,55 @@ export default function Index() {
     toast.info("Generando PDF...");
 
     try {
+      // 1. Esperar a que todas las fuentes estén completamente cargadas
+      await document.fonts.ready;
+
       const pages = previewRef.current.querySelectorAll("[data-menu-page]");
       const fmt = PAGE_FORMATS[menu.pageFormat];
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [fmt.widthMM, fmt.heightMM] });
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: [fmt.widthMM, fmt.heightMM],
+      });
       const pageWidth = fmt.widthMM;
       const pageHeight = fmt.heightMM;
 
       for (let i = 0; i < pages.length; i++) {
         const el = pages[i] as HTMLElement;
-        // Temporarily remove border-radius and shadow to avoid artefacts
+
         const prevStyle = el.style.cssText;
         el.style.borderRadius = "0";
         el.style.boxShadow = "none";
         el.style.border = "none";
 
+        // 2. Resolver el color de fondo real desde las CSS variables del tema
+        const computedBg = getComputedStyle(document.documentElement).getPropertyValue("--menu-bg").trim();
+        const bgColor = computedBg ? `hsl(${computedBg})` : "#ffffff";
+
         const canvas = await html2canvas(el, {
           scale: 4,
           useCORS: true,
-          backgroundColor: null,
+          allowTaint: true,
+          // 3. Fondo real en lugar de null (evita transparencias incorrectas)
+          backgroundColor: bgColor,
           width: el.offsetWidth,
           height: el.offsetHeight,
-          windowWidth: el.offsetWidth,
-          windowHeight: el.offsetHeight,
+          // 4. Tamaño real de la ventana (no del elemento)
+          windowWidth: window.innerWidth,
+          windowHeight: window.innerHeight,
+          onclone: (clonedDoc) => {
+            // 5. Copiar todas las CSS variables del tema al documento clonado
+            const rootStyles = document.documentElement.style.cssText;
+            clonedDoc.documentElement.style.cssText = rootStyles;
+
+            // 6. Forzar display:inline-block en todos los badges del clon
+            //    para garantizar alineación correcta independientemente del CSS
+            clonedDoc.querySelectorAll<HTMLElement>("[data-badge]").forEach((badge) => {
+              badge.style.display = "inline-block";
+              badge.style.verticalAlign = "middle";
+              badge.style.lineHeight = "1";
+            });
+          },
         });
 
         el.style.cssText = prevStyle;
@@ -181,7 +208,9 @@ export default function Index() {
           <button
             onClick={() => setMode("edit")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              mode === "edit" ? "bg-editor-sidebar shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+              mode === "edit"
+                ? "bg-editor-sidebar shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Edit3 className="w-3.5 h-3.5" /> Editar
@@ -189,7 +218,9 @@ export default function Index() {
           <button
             onClick={() => setMode("preview")}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-              mode === "preview" ? "bg-editor-sidebar shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"
+              mode === "preview"
+                ? "bg-editor-sidebar shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Eye className="w-3.5 h-3.5" /> Vista previa
@@ -204,11 +235,7 @@ export default function Index() {
           }}
         />
 
-        <SaveMenuButton
-          menu={menu}
-          currentMenuId={currentMenuId}
-          onSaved={(saved) => setCurrentMenuId(saved.id)}
-        />
+        <SaveMenuButton menu={menu} currentMenuId={currentMenuId} onSaved={(saved) => setCurrentMenuId(saved.id)} />
         <LoadMenuButton
           onLoad={(loadedMenu, id) => {
             setMenu(loadedMenu);
