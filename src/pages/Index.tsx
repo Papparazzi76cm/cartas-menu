@@ -74,14 +74,28 @@ export default function Index() {
       const pageHeight = fmt.heightMM;
 
       for (let i = 0; i < pages.length; i++) {
-        const canvas = await html2canvas(pages[i] as HTMLElement, {
-          scale: 3,
+        const el = pages[i] as HTMLElement;
+        // Temporarily remove border-radius and shadow to avoid artefacts
+        const prevStyle = el.style.cssText;
+        el.style.borderRadius = "0";
+        el.style.boxShadow = "none";
+        el.style.border = "none";
+
+        const canvas = await html2canvas(el, {
+          scale: 4,
           useCORS: true,
           backgroundColor: null,
+          width: el.offsetWidth,
+          height: el.offsetHeight,
+          windowWidth: el.offsetWidth,
+          windowHeight: el.offsetHeight,
         });
-        const imgData = canvas.toDataURL("image/jpeg", 0.95);
+
+        el.style.cssText = prevStyle;
+
+        const imgData = canvas.toDataURL("image/png");
         if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
+        pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
       }
 
       pdf.save(`${menu.restaurantName.replace(/\s+/g, "_")}_carta.pdf`);
