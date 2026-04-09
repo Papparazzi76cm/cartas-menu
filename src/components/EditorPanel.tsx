@@ -574,6 +574,7 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
                               isExpanded={isExpanded}
                               onToggle={() => toggleCategory(cat.id)}
                               onRename={(name) => updateCategoryName(cat.id, name)}
+                              onChangePagesSpan={(span) => updateCategoryPagesSpan(cat.id, span)}
                             />
                             <AnimatePresence>
                               {isExpanded && (
