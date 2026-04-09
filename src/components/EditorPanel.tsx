@@ -210,9 +210,6 @@ function SortableCategoryHeader({
     </div>
   );
 }
-    </div>
-  );
-}
 
 
 export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: EditorPanelProps) {
