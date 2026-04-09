@@ -350,22 +350,14 @@ function MenuItemRow({
       }`}
       style={{ padding: `${py}px ${px}px` }}
     >
-      {/* Tags — FIXED: inline-block + verticalAlign para correcta renderización en PDF */}
       {!compact && item.tags.length > 0 && (
-        <div
-          style={{ marginBottom: `${4 * fontScale}px`, display: "flex", flexWrap: "wrap", gap: `${4 * fontScale}px` }}
-        >
+        <div data-badge-container className="flex gap-1.5 mb-1">
           {item.tags.map((tag) => (
             <span
               key={tag}
-              className="font-body font-semibold uppercase tracking-widest bg-menu-tag-bg text-menu-tag-text rounded-sm"
-              style={{
-                fontSize: tagSize,
-                padding: `${3 * fontScale}px ${8 * fontScale}px`,
-                lineHeight: 1,
-                display: "inline-block",
-                verticalAlign: "middle",
-              }}
+              data-badge="tag"
+              className="font-body font-semibold uppercase tracking-widest bg-menu-tag-bg text-menu-tag-text rounded-sm inline-flex items-center justify-center"
+              style={{ fontSize: tagSize, padding: `${3 * fontScale}px ${8 * fontScale}px`, lineHeight: 1 }}
             >
               {tag}
             </span>
@@ -407,27 +399,15 @@ function MenuItemRow({
         </p>
       )}
 
-      {/* Alérgenos — FIXED: inline-block + lineHeight + gap inline para correcta renderización en PDF */}
+      {/* Alérgenos — data-badge permite al exportPDF corregir alineación en el clon */}
       {!compact && item.allergens.length > 0 && (
-        <div
-          style={{
-            marginTop: 6 * fontScale,
-            display: "flex",
-            flexWrap: "wrap",
-            gap: `${4 * fontScale}px`,
-          }}
-        >
+        <div data-badge-container className="flex flex-wrap gap-1" style={{ marginTop: 6 * fontScale }}>
           {item.allergens.map((a) => (
             <span
               key={a}
+              data-badge="allergen"
               className="font-body text-menu-allergen-text bg-menu-allergen-bg rounded"
-              style={{
-                fontSize: allergenSize,
-                padding: `${2 * fontScale}px ${6 * fontScale}px`,
-                lineHeight: 1,
-                display: "inline-block",
-                verticalAlign: "middle",
-              }}
+              style={{ fontSize: allergenSize, padding: `${2 * fontScale}px ${6 * fontScale}px` }}
             >
               {a}
             </span>
