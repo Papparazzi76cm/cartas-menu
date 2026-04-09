@@ -402,6 +402,9 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
     return ids;
   }, [menu]);
 
+  // All page sortable IDs
+  const allPageIds = useMemo(() => menu.pages.map((p) => `page-${p.id}`), [menu]);
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragId(event.active.id as string);
   };
