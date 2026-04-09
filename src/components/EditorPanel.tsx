@@ -819,7 +819,18 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
 
               {/* Drag overlay */}
               <DragOverlay>
-                {activeDragId && !activeDragId.startsWith("cat-") && (() => {
+                {activeDragId && activeDragId.startsWith("page-") && (() => {
+                  const page = menu.pages.find((p) => `page-${p.id}` === activeDragId);
+                  if (!page) return null;
+                  return (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-editor-sidebar shadow-lg rounded border border-accent/30 text-foreground">
+                      <GripVertical className="w-3.5 h-3.5 text-muted-foreground/60" />
+                      <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-xs font-semibold flex-1">{page.title || "Página"}</span>
+                    </div>
+                  );
+                })()}
+                {activeDragId && !activeDragId.startsWith("cat-") && !activeDragId.startsWith("page-") && (() => {
                   const loc = findItemLocation(menu, activeDragId);
                   if (!loc) return null;
                   const item = menu.pages[loc.pi].categories[loc.ci].items[loc.ii];
