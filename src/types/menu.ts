@@ -54,6 +54,7 @@ export interface MenuData {
   description?: string;
   footer?: string;
   pageFormat: PageFormat;
+  themeId?: string;
   pages: MenuPage[];
 }
 
