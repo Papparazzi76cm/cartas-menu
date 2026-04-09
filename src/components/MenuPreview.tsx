@@ -156,7 +156,7 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
             </div>
           )}
 
-          {page.type === "content" && page.sections && (
+          {page.type === "content" && page.sections && !page.columns && (
             <div style={contentStyle} className="flex flex-col justify-start h-full">
               <div className="flex-1 flex flex-col">
                 {page.sections.map((section, si) => (
@@ -187,6 +187,53 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
               </div>
               {page.footerText && (
                 <div className="mt-auto pt-4 border-t border-menu-divider/30">
+                  <p className="font-menu text-sm text-menu-description text-center leading-relaxed italic">
+                    {page.footerText}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {page.type === "content" && page.sections && page.columns && page.columns >= 2 && (
+            <div style={contentStyle} className="flex flex-col h-full">
+              <div
+                className="flex-1"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: `repeat(${page.columns}, 1fr)`,
+                  gap: `0 ${16 * (page.sections[0]?.fontScale || 0.7)}px`,
+                }}
+              >
+                {page.sections.map((section, si) => (
+                  <div key={si} className="flex flex-col">
+                    <div className="text-center mb-3 pt-1">
+                      <div className="menu-ornament w-10 mx-auto mb-2" />
+                      <h2
+                        className="font-display font-semibold text-menu-title tracking-wide"
+                        style={{ fontSize: `${1.2 * section.fontScale}rem` }}
+                      >
+                        {section.categoryName}
+                      </h2>
+                      <div className="menu-ornament w-10 mx-auto mt-2" />
+                    </div>
+                    <div style={{ gap: `${0.5 * section.fontScale}rem`, display: "flex", flexDirection: "column" }}>
+                      {section.items.map((item) => (
+                        <MenuItemRow
+                          key={item.id}
+                          item={item}
+                          fontScale={section.fontScale}
+                          isSelected={selectedItemId === item.id}
+                          onClick={() => onSelectItem?.(item.id)}
+                          compact
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {page.footerText && (
+                <div className="mt-auto pt-4 border-t border-menu-divider/30" style={{ gridColumn: `1 / -1` }}>
                   <p className="font-menu text-sm text-menu-description text-center leading-relaxed italic">
                     {page.footerText}
                   </p>
