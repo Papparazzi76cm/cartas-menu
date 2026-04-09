@@ -73,8 +73,12 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
     }
   }
 
-  if (menu.footer) {
-    pages.push({ type: "footer" });
+  // Attach footer text to the last content page instead of a separate page
+  if (menu.footer && pages.length > 1) {
+    const lastContent = pages[pages.length - 1];
+    if (lastContent.type === "content") {
+      lastContent.footerText = menu.footer;
+    }
   }
 
   return pages;
