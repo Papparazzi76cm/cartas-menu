@@ -239,6 +239,30 @@ function SortableCategoryHeader({
   );
 }
 
+function EditableText({ value, onChange, className }: { value: string; onChange: (v: string) => void; className?: string }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(value);
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => { if (text.trim()) onChange(text.trim()); setEditing(false); }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") { if (text.trim()) onChange(text.trim()); setEditing(false); }
+          if (e.key === "Escape") { setText(value); setEditing(false); }
+        }}
+        className={`bg-background border border-input rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-ring ${className || ""}`}
+      />
+    );
+  }
+  return (
+    <span className={`cursor-text truncate ${className || ""}`} onDoubleClick={() => { setText(value); setEditing(true); }}>
+      {value}
+    </span>
+  );
+}
 
 export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: EditorPanelProps) {
   const [activeTab, setActiveTab] = useState<"content" | "settings">("content");
