@@ -3,6 +3,7 @@ import { MenuData, PAGE_FORMATS } from "@/types/menu";
 import { sampleMenu } from "@/data/sampleMenu";
 import { MenuPreview } from "@/components/MenuPreview";
 import { EditorPanel } from "@/components/EditorPanel";
+import { SaveMenuButton, LoadMenuButton } from "@/components/SaveLoadMenu";
 import { Button } from "@/components/ui/button";
 import { Download, Eye, Edit3, Utensils } from "lucide-react";
 import { motion } from "framer-motion";
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 
 export default function Index() {
   const [menu, setMenu] = useState<MenuData>(sampleMenu);
+  const [currentMenuId, setCurrentMenuId] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [exporting, setExporting] = useState(false);
@@ -84,6 +86,18 @@ export default function Index() {
             <Eye className="w-3.5 h-3.5" /> Vista previa
           </button>
         </div>
+
+        <SaveMenuButton
+          menu={menu}
+          currentMenuId={currentMenuId}
+          onSaved={(saved) => setCurrentMenuId(saved.id)}
+        />
+        <LoadMenuButton
+          onLoad={(loadedMenu, id) => {
+            setMenu(loadedMenu);
+            setCurrentMenuId(id);
+          }}
+        />
 
         <Button
           size="sm"
