@@ -93,23 +93,18 @@ export default function Index() {
         const bgColor = computedBg ? `hsl(${computedBg})` : "#ffffff";
 
         const canvas = await html2canvas(el, {
-          scale: 4,
+          scale: 2, // 2x es suficiente para impresión de calidad (150-200 dpi efectivos)
           useCORS: true,
           allowTaint: true,
-          // 3. Fondo real en lugar de null (evita transparencias incorrectas)
           backgroundColor: bgColor,
           width: el.offsetWidth,
           height: el.offsetHeight,
-          // 4. Tamaño real de la ventana (no del elemento)
           windowWidth: window.innerWidth,
           windowHeight: window.innerHeight,
           onclone: (clonedDoc) => {
-            // 5. Copiar todas las CSS variables del tema al documento clonado
             const rootStyles = document.documentElement.style.cssText;
             clonedDoc.documentElement.style.cssText = rootStyles;
 
-            // 6. Forzar display:inline-block en todos los badges del clon
-            //    para garantizar alineación correcta independientemente del CSS
             clonedDoc.querySelectorAll<HTMLElement>("[data-badge]").forEach((badge) => {
               badge.style.display = "inline-block";
               badge.style.verticalAlign = "middle";
@@ -120,9 +115,10 @@ export default function Index() {
 
         el.style.cssText = prevStyle;
 
-        const imgData = canvas.toDataURL("image/png");
+        // JPEG con compresión 0.92: calidad visual excelente, tamaño ~10x menor que PNG
+        const imgData = canvas.toDataURL("image/jpeg", 0.92);
         if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+        pdf.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
       }
 
       pdf.save(`${menu.restaurantName.replace(/\s+/g, "_")}_carta.pdf`);
