@@ -93,7 +93,7 @@ export default function Index() {
         const bgColor = computedBg ? `hsl(${computedBg})` : "#ffffff";
 
         const canvas = await html2canvas(el, {
-          scale: 2, // 2x es suficiente para impresión de calidad (150-200 dpi efectivos)
+          scale: 3, // 3x es suficiente para impresión de calidad (150-200 dpi efectivos)
           useCORS: true,
           allowTaint: true,
           backgroundColor: bgColor,
