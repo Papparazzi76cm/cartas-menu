@@ -10,6 +10,7 @@ export const sampleMenu: MenuData = {
   seasonLabel: "Temporada Otoño / Invierno",
   description: "Intentamos respetar los productos que nos ofrece la tierra según su disponibilidad estacional, adaptando constantemente nuestra propuesta.",
   footer: "Carta dirigida por Javier Mariscal y su equipo · Todos nuestros precios incluyen IVA · Consulte disponibilidad de platos por encargo",
+  pageFormat: "A4",
   pages: [
     {
       id: uid(),

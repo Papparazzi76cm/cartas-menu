@@ -28,12 +28,28 @@ export interface MenuPage {
   categories: MenuCategory[];
 }
 
+export type PageFormat = 'A4' | 'A5' | 'A3' | 'Letter';
+
+export const PAGE_FORMATS: Record<PageFormat, { label: string; widthMM: number; heightMM: number }> = {
+  A3: { label: 'DIN A3 (297×420 mm)', widthMM: 297, heightMM: 420 },
+  A4: { label: 'DIN A4 (210×297 mm)', widthMM: 210, heightMM: 297 },
+  A5: { label: 'DIN A5 (148×210 mm)', widthMM: 148, heightMM: 210 },
+  Letter: { label: 'US Letter (216×279 mm)', widthMM: 216, heightMM: 279 },
+};
+
+/** Safe printable margins in mm */
+export const PRINT_MARGINS = { top: 12, bottom: 12, left: 10, right: 10 };
+
+/** Max items per page chunk for a section */
+export const MAX_ITEMS_PER_PAGE = 6;
+
 export interface MenuData {
   restaurantName: string;
   subtitle?: string;
   seasonLabel?: string;
   description?: string;
   footer?: string;
+  pageFormat: PageFormat;
   pages: MenuPage[];
 }
 
