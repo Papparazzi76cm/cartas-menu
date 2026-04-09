@@ -655,21 +655,22 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
             >
-              <SortableContext items={allCatIds} strategy={verticalListSortingStrategy}>
-                <SortableContext items={allItemIds} strategy={verticalListSortingStrategy}>
-                  {menu.pages.map((page, pi) => (
-                    <div key={page.id} className="border border-border rounded-lg overflow-hidden">
-                      <div className="bg-muted/50 px-3 py-2 flex items-center gap-2">
-                        <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-                        <EditableText
-                          value={page.title || `Página ${pi + 1}`}
-                          onChange={(newTitle) => {
-                            const pages = clonePages(menu);
-                            pages[pi].title = newTitle;
-                            onChange({ ...menu, pages });
-                          }}
-                          className="text-xs font-semibold text-foreground flex-1"
-                        />
+              <SortableContext items={allPageIds} strategy={verticalListSortingStrategy}>
+                <SortableContext items={allCatIds} strategy={verticalListSortingStrategy}>
+                  <SortableContext items={allItemIds} strategy={verticalListSortingStrategy}>
+                    {menu.pages.map((page, pi) => (
+                      <SortablePageBlock key={page.id} page={page} pi={pi}>
+                        <div className="bg-muted/50 px-3 py-2 flex items-center gap-2">
+                          <SortablePageHandle pageId={page.id} />
+                          <EditableText
+                            value={page.title || `Página ${pi + 1}`}
+                            onChange={(newTitle) => {
+                              const pages = clonePages(menu);
+                              pages[pi].title = newTitle;
+                              onChange({ ...menu, pages });
+                            }}
+                            className="text-xs font-semibold text-foreground flex-1"
+                          />
                         <button
                           onClick={() => {
                             setExpandedCategories((prev) => {
