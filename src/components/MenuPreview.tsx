@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { MenuData, MenuCategory, MenuItem, MenuPage, PAGE_FORMATS, PRINT_MARGINS, MAX_ITEMS_PER_PAGE } from "@/types/menu";
+import { MenuData, MenuCategory, MenuItem, MenuPage, PAGE_FORMATS, PRINT_MARGINS, MAX_ITEMS_PER_PAGE, PageStyle } from "@/types/menu";
 import { motion } from "framer-motion";
 
 interface MenuPreviewProps {
@@ -14,6 +14,7 @@ interface RenderedPage {
   sections?: { categoryName: string; items: MenuItem[]; fontScale: number }[];
   footerText?: string;
   columns?: number;
+  pageStyle?: PageStyle;
 }
 
 /**
@@ -46,6 +47,7 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
       pages.push({
         type: "content",
         columns: cols,
+        pageStyle: menuPage.style,
         sections: cats.map((cat) => ({ categoryName: cat.name, items: cat.items, fontScale })),
       });
       continue;
@@ -61,6 +63,7 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
       const fontScale = Math.min(1.3, Math.max(0.65, 1 / density));
       pages.push({
         type: "content",
+        pageStyle: menuPage.style,
         sections: cats.map((cat) => ({ categoryName: cat.name, items: cat.items, fontScale })),
       });
     } else {
@@ -77,11 +80,13 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
           if (chunk.length === 0) {
             pages.push({
               type: "content",
+              pageStyle: menuPage.style,
               sections: [{ categoryName: cat.name, items: [], fontScale: 1.3 }],
             });
           } else {
             pages.push({
               type: "content",
+              pageStyle: menuPage.style,
               sections: [{ categoryName: cat.name, items: chunk, fontScale }],
             });
           }
@@ -157,33 +162,42 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
           )}
 
           {page.type === "content" && page.sections && !page.columns && (
-            <div style={contentStyle} className="flex flex-col justify-start h-full">
+            <div style={{ ...contentStyle, ...(page.pageStyle?.fontFamily ? { fontFamily: page.pageStyle.fontFamily } : {}) }} className="flex flex-col justify-start h-full">
               <div className="flex-1 flex flex-col">
-                {page.sections.map((section, si) => (
-                  <div key={si} className="flex-1 flex flex-col">
-                    <div className="text-center mb-6 pt-2">
-                      <div className="menu-ornament w-16 mx-auto mb-4" />
-                      <h2
-                        className="font-display font-semibold text-menu-title tracking-wide"
-                        style={{ fontSize: `${1.5 * section.fontScale}rem` }}
-                      >
-                        {section.categoryName}
-                      </h2>
-                      <div className="menu-ornament w-16 mx-auto mt-4" />
+                {page.sections.map((section, si) => {
+                  const ps = page.pageStyle?.fontSize ?? 1;
+                  const effectiveScale = section.fontScale * ps;
+                  return (
+                    <div key={si} className="flex-1 flex flex-col">
+                      <div className="text-center mb-6 pt-2">
+                        <div className="menu-ornament w-16 mx-auto mb-4" />
+                        <h2
+                          className="font-display font-semibold text-menu-title tracking-wide"
+                          style={{
+                            fontSize: `${1.5 * effectiveScale}rem`,
+                            ...(page.pageStyle?.color ? { color: `hsl(${page.pageStyle.color})` } : {}),
+                            ...(page.pageStyle?.fontFamily ? { fontFamily: page.pageStyle.fontFamily } : {}),
+                          }}
+                        >
+                          {section.categoryName}
+                        </h2>
+                        <div className="menu-ornament w-16 mx-auto mt-4" />
+                      </div>
+                      <div className="flex-1" style={{ gap: `${1 * effectiveScale}rem`, display: "flex", flexDirection: "column" }}>
+                        {section.items.map((item) => (
+                          <MenuItemRow
+                            key={item.id}
+                            item={item}
+                            fontScale={effectiveScale}
+                            isSelected={selectedItemId === item.id}
+                            onClick={() => onSelectItem?.(item.id)}
+                            pageStyle={page.pageStyle}
+                          />
+                        ))}
+                      </div>
                     </div>
-                    <div className="flex-1" style={{ gap: `${1 * section.fontScale}rem`, display: "flex", flexDirection: "column" }}>
-                      {section.items.map((item) => (
-                        <MenuItemRow
-                          key={item.id}
-                          item={item}
-                          fontScale={section.fontScale}
-                          isSelected={selectedItemId === item.id}
-                          onClick={() => onSelectItem?.(item.id)}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
               {page.footerText && (
                 <div className="mt-auto pt-4 border-t border-menu-divider/30">
@@ -281,7 +295,7 @@ function MenuPageContainer({ children, widthPx, heightPx }: { children: React.Re
   );
 }
 
-function MenuItemRow({ item, fontScale, isSelected, onClick, compact }: { item: MenuItem; fontScale: number; isSelected: boolean; onClick: () => void; compact?: boolean }) {
+function MenuItemRow({ item, fontScale, isSelected, onClick, compact, pageStyle }: { item: MenuItem; fontScale: number; isSelected: boolean; onClick: () => void; compact?: boolean; pageStyle?: PageStyle }) {
   const nameSize = (compact ? 12 : 15) * fontScale;
   const descSize = (compact ? 10 : 13) * fontScale;
   const priceSize = (compact ? 11 : 14) * fontScale;
@@ -290,6 +304,8 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact }: { item: 
   const allergenSize = (compact ? 7 : 9) * fontScale;
   const py = (compact ? 3 : 8) * fontScale;
   const px = (compact ? 4 : 12) * fontScale;
+  const titleColor = pageStyle?.color ? { color: `hsl(${pageStyle.color})` } : {};
+  const fontFam = pageStyle?.fontFamily ? { fontFamily: pageStyle.fontFamily } : {};
 
   return (
     <div
@@ -316,7 +332,7 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact }: { item: 
       <div className="flex items-baseline gap-1">
         <h3
           className="font-menu font-semibold text-menu-title leading-snug"
-          style={{ fontSize: nameSize, lineHeight: compact ? 1.2 : undefined }}
+          style={{ fontSize: nameSize, lineHeight: compact ? 1.2 : undefined, ...titleColor, ...fontFam }}
         >
           {item.name}
         </h3>

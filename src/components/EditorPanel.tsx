@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
-import { MenuData, MenuItem, MenuCategory, ALLERGEN_LIST, PAGE_FORMATS, PageFormat } from "@/types/menu";
+import { MenuData, MenuItem, MenuCategory, ALLERGEN_LIST, PAGE_FORMATS, PageFormat, PageStyle } from "@/types/menu";
+import { MENU_THEMES } from "@/lib/themes";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, Plus, Trash2, GripVertical, FileText, Settings, Layers } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trash2, GripVertical, FileText, Settings, Layers, Palette, Type } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DndContext,
@@ -29,6 +30,35 @@ interface EditorPanelProps {
   onChange: (menu: MenuData) => void;
   selectedItemId: string | null;
   onSelectItem: (id: string | null) => void;
+}
+
+function hslToHex(hsl: string): string {
+  const [h, s, l] = hsl.split(" ").map((v) => parseFloat(v));
+  const sN = s / 100, lN = l / 100;
+  const a = sN * Math.min(lN, 1 - lN);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = lN - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, "0");
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
+}
+
+function hexToHsl(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    if (max === r) h = ((g - b) / d + (g < b ? 6 : 0)) * 60;
+    else if (max === g) h = ((b - r) / d + 2) * 60;
+    else h = ((r - g) / d + 4) * 60;
+  }
+  return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
 
 // Helper: locate an item across the whole menu by its id
@@ -116,12 +146,14 @@ function SortableCategoryHeader({
   onToggle,
   onRename,
   onChangePagesSpan,
+  onDelete,
 }: {
   cat: MenuCategory;
   isExpanded: boolean;
   onToggle: () => void;
   onRename: (name: string) => void;
   onChangePagesSpan: (span: number | undefined) => void;
+  onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(cat.name);
@@ -147,7 +179,7 @@ function SortableCategoryHeader({
 
   return (
     <div ref={setNodeRef} style={style} className="border-t border-border/50">
-      <div className="w-full flex items-center gap-2 px-3 py-2 hover:bg-editor-hover transition-colors text-left">
+      <div className="w-full flex items-center gap-2 px-3 py-2 hover:bg-editor-hover transition-colors text-left group">
         <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none">
           <GripVertical className="w-3.5 h-3.5 text-muted-foreground/60" />
         </button>
@@ -195,6 +227,13 @@ function SortableCategoryHeader({
           ))}
         </select>
         <span className="text-[10px] text-muted-foreground">{cat.items.length}</span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          title="Eliminar sección"
+          className="opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity ml-1"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
       </div>
     </div>
   );
@@ -272,6 +311,24 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
     if (!loc) return;
     const pages = clonePages(menu);
     pages[loc.pi].categories[loc.ci].pagesSpan = span;
+    onChange({ ...menu, pages });
+  };
+
+  const deleteCategory = (catId: string) => {
+    const loc = findCatLocation(menu, catId);
+    if (!loc) return;
+    const pages = clonePages(menu);
+    pages[loc.pi].categories.splice(loc.ci, 1);
+    // Remove page if empty
+    if (pages[loc.pi].categories.length === 0) {
+      pages.splice(loc.pi, 1);
+    }
+    onChange({ ...menu, pages });
+  };
+
+  const updatePageStyle = (pageIdx: number, style: Partial<PageStyle>) => {
+    const pages = clonePages(menu);
+    pages[pageIdx].style = { ...pages[pageIdx].style, ...style };
     onChange({ ...menu, pages });
   };
 
@@ -572,7 +629,66 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
                         <span className="text-xs font-semibold text-foreground flex-1">
                           {page.title || `Página ${pi + 1}`}
                         </span>
+                        <button
+                          onClick={() => {
+                            setExpandedCategories((prev) => {
+                              const next = new Set(prev);
+                              const key = `page-style-${page.id}`;
+                              next.has(key) ? next.delete(key) : next.add(key);
+                              return next;
+                            });
+                          }}
+                          title="Estilo de página"
+                          className="hover:text-accent transition-colors"
+                        >
+                          <Palette className="w-3.5 h-3.5 text-muted-foreground" />
+                        </button>
                       </div>
+                      {/* Page style editor */}
+                      {expandedCategories.has(`page-style-${page.id}`) && (
+                        <div className="bg-accent/5 border-b border-border/50 px-3 py-2 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <label className="text-[10px] font-medium text-muted-foreground uppercase w-20">Tamaño</label>
+                            <input
+                              type="range"
+                              min="0.6"
+                              max="1.6"
+                              step="0.05"
+                              value={page.style?.fontSize ?? 1}
+                              onChange={(e) => updatePageStyle(pi, { fontSize: parseFloat(e.target.value) })}
+                              className="flex-1 h-1.5 accent-accent"
+                            />
+                            <span className="text-[10px] text-muted-foreground w-8 text-right">
+                              {Math.round((page.style?.fontSize ?? 1) * 100)}%
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <label className="text-[10px] font-medium text-muted-foreground uppercase w-20">Tipografía</label>
+                            <select
+                              value={page.style?.fontFamily ?? ""}
+                              onChange={(e) => updatePageStyle(pi, { fontFamily: e.target.value || undefined })}
+                              className="flex-1 text-[10px] bg-background border border-input rounded px-1.5 py-1 outline-none focus:ring-1 focus:ring-ring"
+                            >
+                              <option value="">Por defecto (tema)</option>
+                              {["Playfair Display", "Cormorant Garamond", "Bodoni Moda", "Lora", "Libre Baskerville", "Source Serif 4", "DM Serif Display", "Crimson Text", "Noto Serif", "Merriweather", "EB Garamond"].map((f) => (
+                                <option key={f} value={`'${f}', serif`}>{f}</option>
+                              ))}
+                              {["Inter", "DM Sans", "Nunito Sans", "Work Sans", "Noto Sans", "Raleway", "Montserrat", "Open Sans"].map((f) => (
+                                <option key={f} value={`'${f}', sans-serif`}>{f}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <label className="text-[10px] font-medium text-muted-foreground uppercase w-20">Color título</label>
+                            <input
+                              type="color"
+                              value={page.style?.color ? hslToHex(page.style.color) : "#1a1a1a"}
+                              onChange={(e) => updatePageStyle(pi, { color: hexToHsl(e.target.value) })}
+                              className="w-6 h-6 rounded border border-input cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                      )}
                       {page.categories.map((cat) => {
                         const isExpanded = expandedCategories.has(cat.id);
                         return (
@@ -583,6 +699,7 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
                               onToggle={() => toggleCategory(cat.id)}
                               onRename={(name) => updateCategoryName(cat.id, name)}
                               onChangePagesSpan={(span) => updateCategoryPagesSpan(cat.id, span)}
+                              onDelete={() => deleteCategory(cat.id)}
                             />
                             <AnimatePresence>
                               {isExpanded && (
