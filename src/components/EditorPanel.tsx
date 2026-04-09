@@ -150,7 +150,7 @@ function SortableCategoryHeader({
 
   return (
     <div ref={setNodeRef} style={style} className="border-t border-border/50">
-      <div className="w-full flex items-center gap-2 px-3 py-2 hover:bg-editor-hover transition-colors text-left">
+      <div className="w-full flex items-center gap-2 px-3 py-2 hover:bg-editor-hover transition-colors text-left group">
         <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none">
           <GripVertical className="w-3.5 h-3.5 text-muted-foreground/60" />
         </button>
