@@ -12,6 +12,7 @@ interface MenuPreviewProps {
 interface RenderedPage {
   type: "cover" | "content" | "footer";
   sections?: { categoryName: string; items: MenuItem[]; fontScale: number }[];
+  footerText?: string;
 }
 
 /**
