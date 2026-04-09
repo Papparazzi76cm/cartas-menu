@@ -47,6 +47,7 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
       pages.push({
         type: "content",
         columns: cols,
+        pageStyle: menuPage.style,
         sections: cats.map((cat) => ({ categoryName: cat.name, items: cat.items, fontScale })),
       });
       continue;
@@ -62,6 +63,7 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
       const fontScale = Math.min(1.3, Math.max(0.65, 1 / density));
       pages.push({
         type: "content",
+        pageStyle: menuPage.style,
         sections: cats.map((cat) => ({ categoryName: cat.name, items: cat.items, fontScale })),
       });
     } else {
@@ -78,11 +80,13 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
           if (chunk.length === 0) {
             pages.push({
               type: "content",
+              pageStyle: menuPage.style,
               sections: [{ categoryName: cat.name, items: [], fontScale: 1.3 }],
             });
           } else {
             pages.push({
               type: "content",
+              pageStyle: menuPage.style,
               sections: [{ categoryName: cat.name, items: chunk, fontScale }],
             });
           }
