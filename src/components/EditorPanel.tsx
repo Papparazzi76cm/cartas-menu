@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { MenuData, MenuItem, MenuCategory, ALLERGEN_LIST } from "@/types/menu";
+import { MenuData, MenuItem, MenuCategory, ALLERGEN_LIST, PAGE_FORMATS, PageFormat } from "@/types/menu";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
@@ -134,6 +134,18 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
       <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-4">
         {activeTab === "settings" && (
           <div className="space-y-4 animate-fade-in">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Formato de página</label>
+              <select
+                value={menu.pageFormat}
+                onChange={(e) => onChange({ ...menu, pageFormat: e.target.value as PageFormat })}
+                className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {(Object.keys(PAGE_FORMATS) as PageFormat[]).map((fmt) => (
+                  <option key={fmt} value={fmt}>{PAGE_FORMATS[fmt].label}</option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Nombre del restaurante</label>
               <Input value={menu.restaurantName} onChange={(e) => updateRestaurantField("restaurantName", e.target.value)} className="mt-1" />
