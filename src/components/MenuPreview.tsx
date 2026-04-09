@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { MenuData, MenuCategory, MenuItem, MenuPage, PAGE_FORMATS, PRINT_MARGINS, MAX_ITEMS_PER_PAGE } from "@/types/menu";
+import { MenuData, MenuCategory, MenuItem, MenuPage, PAGE_FORMATS, PRINT_MARGINS, MAX_ITEMS_PER_PAGE, PageStyle } from "@/types/menu";
 import { motion } from "framer-motion";
 
 interface MenuPreviewProps {
