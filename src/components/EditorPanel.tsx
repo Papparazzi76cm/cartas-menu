@@ -239,6 +239,30 @@ function SortableCategoryHeader({
   );
 }
 
+function EditableText({ value, onChange, className }: { value: string; onChange: (v: string) => void; className?: string }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState(value);
+  if (editing) {
+    return (
+      <input
+        autoFocus
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={() => { if (text.trim()) onChange(text.trim()); setEditing(false); }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") { if (text.trim()) onChange(text.trim()); setEditing(false); }
+          if (e.key === "Escape") { setText(value); setEditing(false); }
+        }}
+        className={`bg-background border border-input rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-ring ${className || ""}`}
+      />
+    );
+  }
+  return (
+    <span className={`cursor-text truncate ${className || ""}`} onDoubleClick={() => { setText(value); setEditing(true); }}>
+      {value}
+    </span>
+  );
+}
 
 export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: EditorPanelProps) {
   const [activeTab, setActiveTab] = useState<"content" | "settings">("content");
@@ -626,9 +650,15 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
                     <div key={page.id} className="border border-border rounded-lg overflow-hidden">
                       <div className="bg-muted/50 px-3 py-2 flex items-center gap-2">
                         <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-                        <span className="text-xs font-semibold text-foreground flex-1">
-                          {page.title || `Página ${pi + 1}`}
-                        </span>
+                        <EditableText
+                          value={page.title || `Página ${pi + 1}`}
+                          onChange={(newTitle) => {
+                            const pages = clonePages(menu);
+                            pages[pi].title = newTitle;
+                            onChange({ ...menu, pages });
+                          }}
+                          className="text-xs font-semibold text-foreground flex-1"
+                        />
                         <button
                           onClick={() => {
                             setExpandedCategories((prev) => {
