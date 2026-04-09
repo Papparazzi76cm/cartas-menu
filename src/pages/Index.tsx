@@ -93,7 +93,7 @@ export default function Index() {
         const bgColor = computedBg ? `hsl(${computedBg})` : "#ffffff";
 
         const canvas = await html2canvas(el, {
-          scale: 3, // 3x es suficiente para impresión de calidad (150-200 dpi efectivos)
+          scale: 2, // 2x es suficiente para impresión de calidad (150-200 dpi efectivos)
           useCORS: true,
           allowTaint: true,
           backgroundColor: bgColor,
@@ -102,13 +102,25 @@ export default function Index() {
           windowWidth: window.innerWidth,
           windowHeight: window.innerHeight,
           onclone: (clonedDoc) => {
+            // Copiar todas las CSS variables del tema al documento clonado
             const rootStyles = document.documentElement.style.cssText;
             clonedDoc.documentElement.style.cssText = rootStyles;
 
+            // Forzar inline-block en cada badge (tag y alérgeno)
             clonedDoc.querySelectorAll<HTMLElement>("[data-badge]").forEach((badge) => {
               badge.style.display = "inline-block";
               badge.style.verticalAlign = "middle";
               badge.style.lineHeight = "1";
+            });
+
+            // Reemplazar flex+gap en los contenedores por margin en cada hijo
+            // html2canvas tiene soporte limitado para la propiedad gap
+            clonedDoc.querySelectorAll<HTMLElement>("[data-badge-container]").forEach((container) => {
+              container.style.display = "block";
+              Array.from(container.children).forEach((child) => {
+                (child as HTMLElement).style.marginRight = "4px";
+                (child as HTMLElement).style.marginBottom = "4px";
+              });
             });
           },
         });
