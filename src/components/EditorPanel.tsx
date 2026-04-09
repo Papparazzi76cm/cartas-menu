@@ -126,11 +126,7 @@ function SortableCategoryHeader({
   onChangePagesSpan: (span: number | undefined) => void;
   onDelete: () => void;
 }) {
-  isExpanded: boolean;
-  onToggle: () => void;
-  onRename: (name: string) => void;
-  onChangePagesSpan: (span: number | undefined) => void;
-}) {
+  const [editing, setEditing] = useState(false);
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(cat.name);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
