@@ -29,43 +29,46 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
   const pages: RenderedPage[] = [];
   pages.push({ type: "cover" });
 
-  const allCategories: MenuCategory[] = [];
-  for (const page of menu.pages) {
-    for (const cat of page.categories) {
-      allCategories.push(cat);
-    }
-  }
+  for (const menuPage of menu.pages) {
+    const cats = menuPage.categories.filter((c) => c.items.length > 0);
+    if (cats.length === 0) continue;
 
-  for (const cat of allCategories) {
-    if (cat.items.length === 0) continue;
+    // Check if all categories in this page fit together on one rendered page
+    const totalItems = cats.reduce((sum, c) => sum + c.items.length, 0);
+    const allFitOnOne = totalItems <= MAX_ITEMS_PER_PAGE && cats.every((c) => !c.pagesSpan || c.pagesSpan === 1);
 
-    const naturalPages = autoPageCount(cat.items.length);
-    const targetPages = cat.pagesSpan && cat.pagesSpan >= 1 ? cat.pagesSpan : naturalPages;
+    if (allFitOnOne && cats.length > 1) {
+      // Combine multiple small categories onto a single page
+      const density = totalItems / MAX_ITEMS_PER_PAGE;
+      const fontScale = Math.min(1.3, Math.max(0.65, 1 / density));
+      pages.push({
+        type: "content",
+        sections: cats.map((cat) => ({ categoryName: cat.name, items: cat.items, fontScale })),
+      });
+    } else {
+      // Process each category independently
+      for (const cat of cats) {
+        const naturalPages = autoPageCount(cat.items.length);
+        const targetPages = cat.pagesSpan && cat.pagesSpan >= 1 ? cat.pagesSpan : naturalPages;
+        const itemsPerPage = Math.ceil(cat.items.length / targetPages);
+        const density = itemsPerPage / MAX_ITEMS_PER_PAGE;
+        const fontScale = Math.min(1.3, Math.max(0.65, 1 / density));
 
-    // Items per page for this section
-    const itemsPerPage = Math.ceil(cat.items.length / targetPages);
-
-    // Font scale: if user forces fewer pages than natural, shrink; if more, grow
-    // Scale relative to the "ideal" of MAX_ITEMS_PER_PAGE items per page
-    const density = itemsPerPage / MAX_ITEMS_PER_PAGE; // >1 means cramped, <1 means spacious
-    // Clamp scale between 0.65 and 1.3
-    const fontScale = Math.min(1.3, Math.max(0.65, 1 / density));
-
-    // Distribute items across targetPages
-    for (let p = 0; p < targetPages; p++) {
-      const start = p * itemsPerPage;
-      const chunk = cat.items.slice(start, start + itemsPerPage);
-      if (chunk.length === 0) {
-        // Empty page (user requested more pages than items) — show header only
-        pages.push({
-          type: "content",
-          sections: [{ categoryName: cat.name, items: [], fontScale: 1.3 }],
-        });
-      } else {
-        pages.push({
-          type: "content",
-          sections: [{ categoryName: cat.name, items: chunk, fontScale }],
-        });
+        for (let p = 0; p < targetPages; p++) {
+          const start = p * itemsPerPage;
+          const chunk = cat.items.slice(start, start + itemsPerPage);
+          if (chunk.length === 0) {
+            pages.push({
+              type: "content",
+              sections: [{ categoryName: cat.name, items: [], fontScale: 1.3 }],
+            });
+          } else {
+            pages.push({
+              type: "content",
+              sections: [{ categoryName: cat.name, items: chunk, fontScale }],
+            });
+          }
+        }
       }
     }
   }

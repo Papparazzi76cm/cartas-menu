@@ -36,7 +36,7 @@ export const sampleMenu: MenuData = {
     },
     {
       id: uid(),
-      title: "Guisos",
+      title: "Guisos y La Cuchara",
       categories: [
         {
           id: uid(),
@@ -46,6 +46,14 @@ export const sampleMenu: MenuData = {
             { id: uid(), name: "Guiso de carrilleras", description: "Con estroganoff de champiñones.", price: "18,50€", allergens: ["Gluten", "Soja", "Lácteos", "Apio", "Mostaza", "Sulfitos"], tags: [] },
             { id: uid(), name: "Guiso de morrillo de atún y huevo frito de codorniz", description: "Salsa de tomate con un matiz de comino donde guisamos el atún troceado.", price: "20€", allergens: ["Pescado", "Lácteos", "Apio", "Sulfitos"], tags: [] },
             { id: uid(), name: "Rabo guisado al estilo tradicional con patatas", price: "23€", allergens: ["Gluten", "Lácteos", "Apio", "Sulfitos"], tags: [] },
+          ],
+        },
+        {
+          id: uid(),
+          name: "La Cuchara",
+          items: [
+            { id: uid(), name: "La cuchara de la semana", description: "Patatas importancia con cocochas de bacalao.", price: "20€", allergens: ["Crustáceos", "Pescado", "Apio", "Sulfitos"], tags: [] },
+            { id: uid(), name: "Los Jueves Cocido Completo", description: "Por encargo en temporada de invierno.", price: "22,50€", allergens: [], tags: [] },
           ],
         },
       ],
@@ -64,14 +72,6 @@ export const sampleMenu: MenuData = {
             { id: uid(), name: "Churrasco de atún", description: "Elaborado con parpatana de atún, situada entre la ventresca y la cabeza, cortada como si fuera un churrasco de ternera. Con chimichurri y verduras de temporada.", price: "Según mercado", allergens: ["Lácteos", "Apio", "Sulfitos"], tags: [] },
             { id: uid(), name: "Boquerones en vinagre", description: "Sobre cebolleta fresca, ajo frito y perejil.", price: "12,50€", allergens: ["Pescado", "Sulfitos"], tags: [] },
             { id: uid(), name: "Pescados de la Bahía La Alondra", description: "Con agua de Lourdes y verduras de temporada. Lubina a la plancha o frita, mero negro, pargo, urta o rodaballo.", price: "Consultar", allergens: ["Sulfitos"], tags: [] },
-          ],
-        },
-        {
-          id: uid(),
-          name: "La Cuchara",
-          items: [
-            { id: uid(), name: "La cuchara de la semana", description: "Patatas importancia con cocochas de bacalao.", price: "20€", allergens: ["Crustáceos", "Pescado", "Apio", "Sulfitos"], tags: [] },
-            { id: uid(), name: "Los Jueves Cocido Completo", description: "Por encargo en temporada de invierno.", price: "22,50€", allergens: [], tags: [] },
           ],
         },
       ],
