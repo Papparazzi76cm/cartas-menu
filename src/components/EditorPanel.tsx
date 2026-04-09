@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
-import { MenuData, MenuItem, MenuCategory, ALLERGEN_LIST, PAGE_FORMATS, PageFormat } from "@/types/menu";
+import { MenuData, MenuItem, MenuCategory, ALLERGEN_LIST, PAGE_FORMATS, PageFormat, PageStyle } from "@/types/menu";
+import { MENU_THEMES } from "@/lib/themes";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, ChevronRight, Plus, Trash2, GripVertical, FileText, Settings, Layers } from "lucide-react";
+import { ChevronDown, ChevronRight, Plus, Trash2, GripVertical, FileText, Settings, Layers, Palette, Type } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   DndContext,
@@ -116,8 +117,15 @@ function SortableCategoryHeader({
   onToggle,
   onRename,
   onChangePagesSpan,
+  onDelete,
 }: {
   cat: MenuCategory;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onRename: (name: string) => void;
+  onChangePagesSpan: (span: number | undefined) => void;
+  onDelete: () => void;
+}) {
   isExpanded: boolean;
   onToggle: () => void;
   onRename: (name: string) => void;
@@ -195,7 +203,17 @@ function SortableCategoryHeader({
           ))}
         </select>
         <span className="text-[10px] text-muted-foreground">{cat.items.length}</span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          title="Eliminar sección"
+          className="opacity-0 group-hover:opacity-100 hover:text-destructive transition-opacity ml-1"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
       </div>
+    </div>
+  );
+}
     </div>
   );
 }
