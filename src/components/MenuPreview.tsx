@@ -14,6 +14,7 @@ interface RenderedPage {
   sections?: { categoryName: string; items: MenuItem[]; fontScale: number }[];
   footerText?: string;
   columns?: number;
+  pageStyle?: PageStyle;
 }
 
 /**
