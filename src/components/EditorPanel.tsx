@@ -285,6 +285,24 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
     onChange({ ...menu, pages });
   };
 
+  const deleteCategory = (catId: string) => {
+    const loc = findCatLocation(menu, catId);
+    if (!loc) return;
+    const pages = clonePages(menu);
+    pages[loc.pi].categories.splice(loc.ci, 1);
+    // Remove page if empty
+    if (pages[loc.pi].categories.length === 0) {
+      pages.splice(loc.pi, 1);
+    }
+    onChange({ ...menu, pages });
+  };
+
+  const updatePageStyle = (pageIdx: number, style: Partial<PageStyle>) => {
+    const pages = clonePages(menu);
+    pages[pageIdx].style = { ...pages[pageIdx].style, ...style };
+    onChange({ ...menu, pages });
+  };
+
   const addSection = () => {
     const newCatId = Math.random().toString(36).slice(2, 10);
     const pages = clonePages(menu);
@@ -593,6 +611,7 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
                               onToggle={() => toggleCategory(cat.id)}
                               onRename={(name) => updateCategoryName(cat.id, name)}
                               onChangePagesSpan={(span) => updateCategoryPagesSpan(cat.id, span)}
+                              onDelete={() => deleteCategory(cat.id)}
                             />
                             <AnimatePresence>
                               {isExpanded && (
