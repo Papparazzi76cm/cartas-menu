@@ -35,10 +35,12 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
     if (cats.length === 0) continue;
 
     // Check if all categories in this page fit together on one rendered page
+    // Allow up to ~8 items combined (with font scaling) when multiple categories share a page
     const totalItems = cats.reduce((sum, c) => sum + c.items.length, 0);
-    const allFitOnOne = totalItems <= MAX_ITEMS_PER_PAGE && cats.every((c) => !c.pagesSpan || c.pagesSpan === 1);
+    const maxCombined = MAX_ITEMS_PER_PAGE + 2; // 8 items max on a combined page
+    const allFitOnOne = totalItems <= maxCombined && cats.length > 1 && cats.every((c) => !c.pagesSpan || c.pagesSpan === 1);
 
-    if (allFitOnOne && cats.length > 1) {
+    if (allFitOnOne) {
       // Combine multiple small categories onto a single page
       const density = totalItems / MAX_ITEMS_PER_PAGE;
       const fontScale = Math.min(1.3, Math.max(0.65, 1 / density));
