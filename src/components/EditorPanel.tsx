@@ -114,11 +114,15 @@ function SortableCategoryHeader({
   cat,
   isExpanded,
   onToggle,
+  onRename,
 }: {
   cat: MenuCategory;
   isExpanded: boolean;
   onToggle: () => void;
+  onRename: (name: string) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(cat.name);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `cat-${cat.id}`,
     data: { type: "category", cat },
@@ -130,25 +134,52 @@ function SortableCategoryHeader({
     opacity: isDragging ? 0.4 : 1,
   };
 
+  const commitRename = () => {
+    const trimmed = editName.trim();
+    if (trimmed && trimmed !== cat.name) onRename(trimmed);
+    else setEditName(cat.name);
+    setEditing(false);
+  };
+
   return (
     <div ref={setNodeRef} style={style} className="border-t border-border/50">
       <div className="w-full flex items-center gap-2 px-3 py-2 hover:bg-editor-hover transition-colors text-left">
         <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none">
           <GripVertical className="w-3.5 h-3.5 text-muted-foreground/60" />
         </button>
-        <button onClick={onToggle} className="flex items-center gap-2 flex-1 text-left">
+        <button onClick={onToggle} className="flex-shrink-0">
           {isExpanded ? (
             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
           ) : (
             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
           )}
-          <span className="text-xs font-medium text-foreground flex-1">{cat.name}</span>
-          <span className="text-[10px] text-muted-foreground">{cat.items.length}</span>
         </button>
+        {editing ? (
+          <input
+            autoFocus
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitRename();
+              if (e.key === "Escape") { setEditName(cat.name); setEditing(false); }
+            }}
+            className="text-xs font-medium text-foreground flex-1 bg-background border border-input rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-ring"
+          />
+        ) : (
+          <span
+            className="text-xs font-medium text-foreground flex-1 cursor-text"
+            onDoubleClick={() => { setEditName(cat.name); setEditing(true); }}
+          >
+            {cat.name}
+          </span>
+        )}
+        <span className="text-[10px] text-muted-foreground">{cat.items.length}</span>
       </div>
     </div>
   );
 }
+
 
 export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: EditorPanelProps) {
   const [activeTab, setActiveTab] = useState<"content" | "settings">("content");
@@ -206,6 +237,26 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
       items: [],
     });
     onChange({ ...menu, pages });
+  };
+
+  const updateCategoryName = (catId: string, newName: string) => {
+    const loc = findCatLocation(menu, catId);
+    if (!loc) return;
+    const pages = clonePages(menu);
+    pages[loc.pi].categories[loc.ci].name = newName;
+    onChange({ ...menu, pages });
+  };
+
+  const addSection = () => {
+    const newCatId = Math.random().toString(36).slice(2, 10);
+    const pages = clonePages(menu);
+    pages.push({
+      id: Math.random().toString(36).slice(2, 10),
+      title: "Nueva sección",
+      categories: [{ id: newCatId, name: "Nueva sección", items: [] }],
+    });
+    onChange({ ...menu, pages });
+    setExpandedCategories((prev) => new Set(prev).add(newCatId));
   };
 
   const addPage = () => {
@@ -502,6 +553,7 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
                               cat={cat}
                               isExpanded={isExpanded}
                               onToggle={() => toggleCategory(cat.id)}
+                              onRename={(name) => updateCategoryName(cat.id, name)}
                             />
                             <AnimatePresence>
                               {isExpanded && (
@@ -577,9 +629,14 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
               </DragOverlay>
             </DndContext>
 
-            <Button variant="outline" size="sm" onClick={addPage} className="w-full">
-              <Plus className="w-3.5 h-3.5 mr-1" /> Añadir página
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={addSection} className="flex-1">
+                <Plus className="w-3.5 h-3.5 mr-1" /> Crear sección
+              </Button>
+              <Button variant="outline" size="sm" onClick={addPage} className="flex-1">
+                <Plus className="w-3.5 h-3.5 mr-1" /> Añadir página
+              </Button>
+            </div>
           </div>
         )}
       </div>
