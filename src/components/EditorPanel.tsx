@@ -624,14 +624,17 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
                 <SortableContext items={allItemIds} strategy={verticalListSortingStrategy}>
                   {menu.pages.map((page, pi) => (
                     <div key={page.id} className="border border-border rounded-lg overflow-hidden">
-                      <EditablePageTitle
-                        value={page.title || `Página ${pi + 1}`}
-                        onChange={(newTitle) => {
-                          const pages = clonePages(menu);
-                          pages[pi].title = newTitle;
-                          onChange({ ...menu, pages });
-                        }}
-                      />
+                      <div className="bg-muted/50 px-3 py-2 flex items-center gap-2">
+                        <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                        <EditableText
+                          value={page.title || `Página ${pi + 1}`}
+                          onChange={(newTitle) => {
+                            const pages = clonePages(menu);
+                            pages[pi].title = newTitle;
+                            onChange({ ...menu, pages });
+                          }}
+                          className="text-xs font-semibold text-foreground flex-1"
+                        />
                         <button
                           onClick={() => {
                             setExpandedCategories((prev) => {
