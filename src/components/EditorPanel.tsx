@@ -60,11 +60,6 @@ function hexToHsl(hex: string): string {
   }
   return `${Math.round(h)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 }
-  menu: MenuData;
-  onChange: (menu: MenuData) => void;
-  selectedItemId: string | null;
-  onSelectItem: (id: string | null) => void;
-}
 
 // Helper: locate an item across the whole menu by its id
 function findItemLocation(menu: MenuData, itemId: string) {
