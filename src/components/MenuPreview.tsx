@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { MenuData, MenuCategory, MenuItem, PAGE_FORMATS, PRINT_MARGINS, MAX_ITEMS_PER_PAGE } from "@/types/menu";
+import { MenuData, MenuCategory, MenuItem, MenuPage, PAGE_FORMATS, PRINT_MARGINS, MAX_ITEMS_PER_PAGE } from "@/types/menu";
 import { motion } from "framer-motion";
 
 interface MenuPreviewProps {
@@ -13,6 +13,7 @@ interface RenderedPage {
   type: "cover" | "content" | "footer";
   sections?: { categoryName: string; items: MenuItem[]; fontScale: number }[];
   footerText?: string;
+  columns?: number;
 }
 
 /**
