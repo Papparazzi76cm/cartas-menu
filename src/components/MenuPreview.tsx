@@ -299,7 +299,7 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact }: { item: 
       }`}
       style={{ padding: `${py}px ${px}px` }}
     >
-      {item.tags.length > 0 && (
+      {!compact && item.tags.length > 0 && (
         <div className="flex gap-1.5 mb-1">
           {item.tags.map((tag) => (
             <span
@@ -313,14 +313,14 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact }: { item: 
         </div>
       )}
 
-      <div className="flex items-baseline gap-2">
+      <div className="flex items-baseline gap-1">
         <h3
-          className="font-menu font-semibold text-menu-title flex-shrink-0 leading-snug"
-          style={{ fontSize: nameSize }}
+          className="font-menu font-semibold text-menu-title leading-snug"
+          style={{ fontSize: nameSize, lineHeight: compact ? 1.2 : undefined }}
         >
           {item.name}
         </h3>
-        <div className="flex-shrink-0 border-b border-dotted border-menu-divider/50 flex-1 min-w-[20px] mx-1 mb-1" />
+        <div className="border-b border-dotted border-menu-divider/50 flex-1 min-w-[8px] mx-0.5 mb-0.5" />
         <span
           className="font-body font-semibold text-menu-price whitespace-nowrap"
           style={{ fontSize: priceSize }}
@@ -329,17 +329,17 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact }: { item: 
         </span>
       </div>
 
-      {item.halfPrice && (
+      {!compact && item.halfPrice && (
         <p className="font-body text-menu-description ml-0" style={{ fontSize: metaSize, marginTop: 2 * fontScale }}>
           ½ ración: {item.halfPrice}
         </p>
       )}
 
-      {item.unit && (
+      {!compact && item.unit && (
         <p className="font-body text-menu-description" style={{ fontSize: metaSize, marginTop: 2 * fontScale }}>{item.unit}</p>
       )}
 
-      {item.description && (
+      {!compact && item.description && (
         <p
           className="font-menu text-menu-description italic leading-relaxed"
           style={{ fontSize: descSize, marginTop: 4 * fontScale }}
@@ -348,7 +348,7 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact }: { item: 
         </p>
       )}
 
-      {item.allergens.length > 0 && (
+      {!compact && item.allergens.length > 0 && (
         <div className="flex flex-wrap gap-1" style={{ marginTop: 6 * fontScale }}>
           {item.allergens.map((a) => (
             <span
