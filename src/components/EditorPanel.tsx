@@ -477,13 +477,21 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
       const pages = clonePages(menu);
 
       if (from.pi === to.pi) {
-        // Same page: reorder
         pages[from.pi].categories = arrayMove(pages[from.pi].categories, from.ci, to.ci);
       } else {
-        // Cross-page: move category
         const [movedCat] = pages[from.pi].categories.splice(from.ci, 1);
         pages[to.pi].categories.splice(to.ci, 0, movedCat);
       }
+      onChange({ ...menu, pages });
+      return;
+    }
+
+    // --- Page reorder ---
+    if (activeData?.type === "page") {
+      const fromIdx = menu.pages.findIndex((p) => `page-${p.id}` === active.id);
+      const toIdx = menu.pages.findIndex((p) => `page-${p.id}` === over.id);
+      if (fromIdx === -1 || toIdx === -1) return;
+      const pages = arrayMove(clonePages(menu), fromIdx, toIdx);
       onChange({ ...menu, pages });
     }
   };
