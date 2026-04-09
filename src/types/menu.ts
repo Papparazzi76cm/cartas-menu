@@ -28,6 +28,8 @@ export interface MenuPage {
   title?: string;
   subtitle?: string;
   categories: MenuCategory[];
+  /** Number of columns for this page layout (default 1) */
+  columns?: number;
 }
 
 export type PageFormat = 'A4' | 'A5' | 'A3' | 'Letter';

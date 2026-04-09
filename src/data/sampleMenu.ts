@@ -103,6 +103,44 @@ export const sampleMenu: MenuData = {
     },
     {
       id: uid(),
+      title: "Carta de Barra",
+      columns: 2,
+      categories: [
+        {
+          id: uid(),
+          name: "Para picar rápido",
+          items: [
+            { id: uid(), name: "Empanadilla argentina", price: "3,80€", allergens: ["Gluten", "Huevos", "Lácteos", "Sulfitos"], tags: ["NUEVO"], description: "" },
+            { id: uid(), name: "Mollete de carrilleras", price: "5,50€", allergens: ["Gluten", "Lácteos", "Apio"], tags: [], description: "" },
+            { id: uid(), name: "Oreja brava a la plancha", description: "Con pimientos de Padrón.", price: "16€", halfPrice: "9€", allergens: ["Gluten", "Huevos", "Lácteos", "Apio", "Sulfitos"], tags: [] },
+            { id: uid(), name: "Torrija de foie con cecina de Wagyu", description: "Compota de queso y miel, cebolla caramelizada y trompetas.", price: "7€", allergens: ["Gluten", "Huevos", "Apio", "Sulfitos"], tags: ["2º Premio"] },
+            { id: uid(), name: "Torreznos", price: "9€", allergens: [], tags: [], description: "" },
+            { id: uid(), name: "Pincho moruno de atún", description: "Atún balfegó con aliño moruno, salsa de mostaza y miel sobre hoja de shiso.", price: "7,50€", allergens: ["Gluten", "Pescado", "Mostaza", "Sulfitos"], tags: [] },
+            { id: uid(), name: "Bikini de pastrami y queso raclette trufado", price: "2,80€", allergens: ["Gluten", "Lácteos"], tags: [], description: "" },
+            { id: uid(), name: "Tortilla de queso azul con tartufata", description: "Tortilla cremosa de queso azul.", price: "6,50€", allergens: ["Huevos", "Lácteos", "Apio", "Sulfitos"], tags: [] },
+            { id: uid(), name: "Palomita de ensaladilla", price: "3,50€", allergens: ["Crustáceos", "Huevos", "Pescado", "Lácteos"], tags: [], description: "" },
+            { id: uid(), name: "Gilda de anchoa", price: "2,25€", allergens: ["Pescado", "Sulfitos"], tags: [], description: "" },
+            { id: uid(), name: "Croquetas de jamón", price: "2,20€", allergens: ["Gluten", "Huevos", "Lácteos"], tags: [], description: "" },
+          ],
+        },
+        {
+          id: uid(),
+          name: "Menú Platos",
+          items: [
+            { id: uid(), name: "Cruasán casero de jamón y queso ahumado", price: "2,25€", allergens: ["Gluten", "Lácteos", "Frutos secos"], tags: [], description: "" },
+            { id: uid(), name: "Patatas bravas", description: "Con alioli de base y salsa casera con chipotle.", price: "7€", allergens: ["Huevos", "Soja", "Lácteos", "Sulfitos"], tags: [] },
+            { id: uid(), name: "Tosta de gambas al ajillo", price: "3,45€", allergens: ["Gluten", "Crustáceos", "Huevos", "Lácteos"], tags: [], description: "" },
+            { id: uid(), name: "Tosta de pulpo", price: "4,20€", allergens: ["Gluten", "Crustáceos", "Huevos"], tags: [], description: "" },
+            { id: uid(), name: "Ensaladilla rusa con langostinos", price: "14,50€", halfPrice: "7,50€", allergens: ["Crustáceos"], tags: [], description: "" },
+            { id: uid(), name: "Mollete de ventresca, piparras y anchoas", description: "Ventresca fina de bonito con anchoas y piparras en pan calentito.", price: "5,50€", allergens: ["Gluten", "Pescado", "Sulfitos"], tags: [] },
+            { id: uid(), name: "Albóndiga rellena de foie", price: "3,20€", unit: "unidad", allergens: ["Gluten", "Huevos", "Soja", "Lácteos", "Apio"], tags: [], description: "" },
+            { id: uid(), name: "Tosta de atún con albahaca y tartufata", price: "Consultar", allergens: ["Gluten", "Soja", "Lácteos", "Mostaza", "Sésamo", "Sulfitos"], tags: [], description: "" },
+          ],
+        },
+      ],
+    },
+    {
+      id: uid(),
       title: "Postres",
       categories: [
         {
