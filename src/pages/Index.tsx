@@ -87,6 +87,18 @@ export default function Index() {
           </button>
         </div>
 
+        <SaveMenuButton
+          menu={menu}
+          currentMenuId={currentMenuId}
+          onSaved={(saved) => setCurrentMenuId(saved.id)}
+        />
+        <LoadMenuButton
+          onLoad={(loadedMenu, id) => {
+            setMenu(loadedMenu);
+            setCurrentMenuId(id);
+          }}
+        />
+
         <Button
           size="sm"
           onClick={exportPDF}
