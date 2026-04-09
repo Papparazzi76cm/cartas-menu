@@ -332,7 +332,7 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact, pageStyle 
       <div className="flex items-baseline gap-1">
         <h3
           className="font-menu font-semibold text-menu-title leading-snug"
-          style={{ fontSize: nameSize, lineHeight: compact ? 1.2 : undefined }}
+          style={{ fontSize: nameSize, lineHeight: compact ? 1.2 : undefined, ...titleColor, ...fontFam }}
         >
           {item.name}
         </h3>
