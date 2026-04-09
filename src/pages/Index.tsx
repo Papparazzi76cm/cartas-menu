@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { MenuData } from "@/types/menu";
+import { MenuData, PAGE_FORMATS } from "@/types/menu";
 import { sampleMenu } from "@/data/sampleMenu";
 import { MenuPreview } from "@/components/MenuPreview";
 import { EditorPanel } from "@/components/EditorPanel";
@@ -24,9 +24,10 @@ export default function Index() {
 
     try {
       const pages = previewRef.current.querySelectorAll("[data-menu-page]");
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageWidth = 210;
-      const pageHeight = 297;
+      const fmt = PAGE_FORMATS[menu.pageFormat];
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: [fmt.widthMM, fmt.heightMM] });
+      const pageWidth = fmt.widthMM;
+      const pageHeight = fmt.heightMM;
 
       for (let i = 0; i < pages.length; i++) {
         const canvas = await html2canvas(pages[i] as HTMLElement, {
