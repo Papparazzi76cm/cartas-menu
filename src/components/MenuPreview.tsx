@@ -318,11 +318,11 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact, pageStyle 
       {!compact && item.tags.length > 0 && (
         <div className="flex gap-1.5 mb-1">
           {item.tags.map((tag) => (
-            <span
-              key={tag}
-              className="font-body font-semibold uppercase tracking-widest bg-menu-tag-bg text-menu-tag-text rounded-sm"
-              style={{ fontSize: tagSize, padding: `${2 * fontScale}px ${8 * fontScale}px` }}
-            >
+              <span
+                key={tag}
+                className="font-body font-semibold uppercase tracking-widest bg-menu-tag-bg text-menu-tag-text rounded-sm inline-flex items-center justify-center"
+                style={{ fontSize: tagSize, padding: `${3 * fontScale}px ${8 * fontScale}px`, lineHeight: 1 }}
+              >
               {tag}
             </span>
           ))}
