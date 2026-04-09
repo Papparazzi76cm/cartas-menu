@@ -115,11 +115,13 @@ function SortableCategoryHeader({
   isExpanded,
   onToggle,
   onRename,
+  onChangePagesSpan,
 }: {
   cat: MenuCategory;
   isExpanded: boolean;
   onToggle: () => void;
   onRename: (name: string) => void;
+  onChangePagesSpan: (span: number | undefined) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(cat.name);
@@ -140,6 +142,8 @@ function SortableCategoryHeader({
     else setEditName(cat.name);
     setEditing(false);
   };
+
+  const autoPages = cat.items.length === 0 ? 1 : Math.ceil(cat.items.length / 6);
 
   return (
     <div ref={setNodeRef} style={style} className="border-t border-border/50">
@@ -168,12 +172,28 @@ function SortableCategoryHeader({
           />
         ) : (
           <span
-            className="text-xs font-medium text-foreground flex-1 cursor-text"
+            className="text-xs font-medium text-foreground flex-1 cursor-text truncate"
             onDoubleClick={() => { setEditName(cat.name); setEditing(true); }}
           >
             {cat.name}
           </span>
         )}
+        {/* Page span selector */}
+        <select
+          value={cat.pagesSpan ?? ""}
+          onChange={(e) => {
+            const val = e.target.value;
+            onChangePagesSpan(val === "" ? undefined : Number(val));
+          }}
+          onClick={(e) => e.stopPropagation()}
+          title="Páginas que ocupa esta sección"
+          className="w-14 text-[10px] text-muted-foreground bg-background border border-input rounded px-1 py-0.5 outline-none focus:ring-1 focus:ring-ring"
+        >
+          <option value="">{autoPages}p ⚡</option>
+          {[1, 2, 3, 4, 5, 6].map((n) => (
+            <option key={n} value={n}>{n}p</option>
+          ))}
+        </select>
         <span className="text-[10px] text-muted-foreground">{cat.items.length}</span>
       </div>
     </div>
