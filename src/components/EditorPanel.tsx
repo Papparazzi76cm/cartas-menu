@@ -127,7 +127,6 @@ function SortableCategoryHeader({
   onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [editing, setEditing] = useState(false);
   const [editName, setEditName] = useState(cat.name);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `cat-${cat.id}`,
