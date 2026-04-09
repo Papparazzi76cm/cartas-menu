@@ -19,6 +19,8 @@ export interface MenuCategory {
   id: string;
   name: string;
   items: MenuItem[];
+  /** Number of pages this section should span. Auto-calculated if omitted. */
+  pagesSpan?: number;
 }
 
 export interface MenuPage {
