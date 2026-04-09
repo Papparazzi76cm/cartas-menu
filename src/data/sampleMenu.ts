@@ -1,5 +1,4 @@
 import { MenuData } from "@/types/menu";
-import { v4 } from "@/lib/utils";
 
 function uid() {
   return Math.random().toString(36).slice(2, 10);
