@@ -178,12 +178,8 @@ function SortableCategoryHeader({
       </div>
     </div>
   );
-          <span className="text-[10px] text-muted-foreground">{cat.items.length}</span>
-        </button>
-      </div>
-    </div>
-  );
 }
+
 
 export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: EditorPanelProps) {
   const [activeTab, setActiveTab] = useState<"content" | "settings">("content");
