@@ -11,22 +11,24 @@ interface MenuPreviewProps {
 /** Represents one rendered page */
 interface RenderedPage {
   type: "cover" | "content" | "footer";
-  sections?: { categoryName: string; items: MenuItem[] }[];
+  sections?: { categoryName: string; items: MenuItem[]; fontScale: number }[];
 }
 
 /**
- * Pagination engine:
- * - Each section (category) never shares a page with another section.
- * - Max 6 items per page. If a section has >6 items, it splits into chunks of 6.
- * - Sections with 1-6 items occupy exactly one page.
+ * Compute how many pages a category actually needs (auto).
+ */
+function autoPageCount(itemCount: number): number {
+  if (itemCount === 0) return 0;
+  return Math.ceil(itemCount / MAX_ITEMS_PER_PAGE);
+}
+
+/**
+ * Pagination engine with per-section page span and font scaling.
  */
 function paginateMenu(menu: MenuData): RenderedPage[] {
   const pages: RenderedPage[] = [];
-
-  // Cover page
   pages.push({ type: "cover" });
 
-  // Content pages — flatten all categories across all menu.pages
   const allCategories: MenuCategory[] = [];
   for (const page of menu.pages) {
     for (const cat of page.categories) {
@@ -37,21 +39,37 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
   for (const cat of allCategories) {
     if (cat.items.length === 0) continue;
 
-    // Split into chunks of MAX_ITEMS_PER_PAGE
-    const chunks: MenuItem[][] = [];
-    for (let i = 0; i < cat.items.length; i += MAX_ITEMS_PER_PAGE) {
-      chunks.push(cat.items.slice(i, i + MAX_ITEMS_PER_PAGE));
-    }
+    const naturalPages = autoPageCount(cat.items.length);
+    const targetPages = cat.pagesSpan && cat.pagesSpan >= 1 ? cat.pagesSpan : naturalPages;
 
-    for (const chunk of chunks) {
-      pages.push({
-        type: "content",
-        sections: [{ categoryName: cat.name, items: chunk }],
-      });
+    // Items per page for this section
+    const itemsPerPage = Math.ceil(cat.items.length / targetPages);
+
+    // Font scale: if user forces fewer pages than natural, shrink; if more, grow
+    // Scale relative to the "ideal" of MAX_ITEMS_PER_PAGE items per page
+    const density = itemsPerPage / MAX_ITEMS_PER_PAGE; // >1 means cramped, <1 means spacious
+    // Clamp scale between 0.65 and 1.3
+    const fontScale = Math.min(1.3, Math.max(0.65, 1 / density));
+
+    // Distribute items across targetPages
+    for (let p = 0; p < targetPages; p++) {
+      const start = p * itemsPerPage;
+      const chunk = cat.items.slice(start, start + itemsPerPage);
+      if (chunk.length === 0) {
+        // Empty page (user requested more pages than items) — show header only
+        pages.push({
+          type: "content",
+          sections: [{ categoryName: cat.name, items: [], fontScale: 1.3 }],
+        });
+      } else {
+        pages.push({
+          type: "content",
+          sections: [{ categoryName: cat.name, items: chunk, fontScale }],
+        });
+      }
     }
   }
 
-  // Footer page
   if (menu.footer) {
     pages.push({ type: "footer" });
   }
@@ -118,20 +136,24 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
             <div style={contentStyle} className="flex flex-col justify-start">
               {page.sections.map((section, si) => (
                 <div key={si} className="flex-1 flex flex-col">
-                  {/* Category header */}
+                  {/* Category header — scales title too */}
                   <div className="text-center mb-6 pt-2">
                     <div className="menu-ornament w-16 mx-auto mb-4" />
-                    <h2 className="font-display text-2xl font-semibold text-menu-title tracking-wide">
+                    <h2
+                      className="font-display font-semibold text-menu-title tracking-wide"
+                      style={{ fontSize: `${1.5 * section.fontScale}rem` }}
+                    >
                       {section.categoryName}
                     </h2>
                     <div className="menu-ornament w-16 mx-auto mt-4" />
                   </div>
                   {/* Items */}
-                  <div className="space-y-4 flex-1">
+                  <div className="flex-1" style={{ gap: `${1 * section.fontScale}rem`, display: "flex", flexDirection: "column" }}>
                     {section.items.map((item) => (
                       <MenuItemRow
                         key={item.id}
                         item={item}
+                        fontScale={section.fontScale}
                         isSelected={selectedItemId === item.id}
                         onClick={() => onSelectItem?.(item.id)}
                       />
@@ -165,7 +187,6 @@ function MenuPageContainer({ children, widthPx, heightPx }: { children: React.Re
       className="bg-menu-bg shadow-xl rounded-sm border border-border/50 relative overflow-hidden"
       style={{ width: widthPx, height: heightPx }}
     >
-      {/* Decorative inner border — respects print margins */}
       <div
         className="absolute border border-menu-divider/30 pointer-events-none rounded-sm"
         style={{
@@ -182,18 +203,32 @@ function MenuPageContainer({ children, widthPx, heightPx }: { children: React.Re
   );
 }
 
-function MenuItemRow({ item, isSelected, onClick }: { item: MenuItem; isSelected: boolean; onClick: () => void }) {
+function MenuItemRow({ item, fontScale, isSelected, onClick }: { item: MenuItem; fontScale: number; isSelected: boolean; onClick: () => void }) {
+  const nameSize = 15 * fontScale;
+  const descSize = 13 * fontScale;
+  const priceSize = 14 * fontScale;
+  const metaSize = 12 * fontScale;
+  const tagSize = 9 * fontScale;
+  const allergenSize = 9 * fontScale;
+  const py = 8 * fontScale;
+  const px = 12 * fontScale;
+
   return (
     <div
       onClick={onClick}
-      className={`group cursor-pointer rounded px-3 py-2 transition-all duration-200 ${
+      className={`group cursor-pointer rounded transition-all duration-200 ${
         isSelected ? "bg-accent/10 ring-1 ring-accent/30" : "hover:bg-accent/5"
       }`}
+      style={{ padding: `${py}px ${px}px` }}
     >
       {item.tags.length > 0 && (
         <div className="flex gap-1.5 mb-1">
           {item.tags.map((tag) => (
-            <span key={tag} className="font-body text-[9px] font-semibold uppercase tracking-widest bg-menu-tag-bg text-menu-tag-text px-2 py-0.5 rounded-sm">
+            <span
+              key={tag}
+              className="font-body font-semibold uppercase tracking-widest bg-menu-tag-bg text-menu-tag-text rounded-sm"
+              style={{ fontSize: tagSize, padding: `${2 * fontScale}px ${8 * fontScale}px` }}
+            >
               {tag}
             </span>
           ))}
@@ -201,35 +236,48 @@ function MenuItemRow({ item, isSelected, onClick }: { item: MenuItem; isSelected
       )}
 
       <div className="flex items-baseline gap-2">
-        <h3 className="font-menu text-[15px] font-semibold text-menu-title flex-shrink-0 leading-snug">
+        <h3
+          className="font-menu font-semibold text-menu-title flex-shrink-0 leading-snug"
+          style={{ fontSize: nameSize }}
+        >
           {item.name}
         </h3>
         <div className="flex-shrink-0 border-b border-dotted border-menu-divider/50 flex-1 min-w-[20px] mx-1 mb-1" />
-        <span className="font-body text-sm font-semibold text-menu-price whitespace-nowrap">
+        <span
+          className="font-body font-semibold text-menu-price whitespace-nowrap"
+          style={{ fontSize: priceSize }}
+        >
           {item.price}
         </span>
       </div>
 
       {item.halfPrice && (
-        <p className="font-body text-xs text-menu-description ml-0 mt-0.5">
+        <p className="font-body text-menu-description ml-0" style={{ fontSize: metaSize, marginTop: 2 * fontScale }}>
           ½ ración: {item.halfPrice}
         </p>
       )}
 
       {item.unit && (
-        <p className="font-body text-xs text-menu-description mt-0.5">{item.unit}</p>
+        <p className="font-body text-menu-description" style={{ fontSize: metaSize, marginTop: 2 * fontScale }}>{item.unit}</p>
       )}
 
       {item.description && (
-        <p className="font-menu text-[13px] text-menu-description italic mt-1 leading-relaxed">
+        <p
+          className="font-menu text-menu-description italic leading-relaxed"
+          style={{ fontSize: descSize, marginTop: 4 * fontScale }}
+        >
           {item.description}
         </p>
       )}
 
       {item.allergens.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-1.5">
+        <div className="flex flex-wrap gap-1" style={{ marginTop: 6 * fontScale }}>
           {item.allergens.map((a) => (
-            <span key={a} className="font-body text-[9px] text-menu-allergen-text bg-menu-allergen-bg px-1.5 py-0.5 rounded">
+            <span
+              key={a}
+              className="font-body text-menu-allergen-text bg-menu-allergen-bg rounded"
+              style={{ fontSize: allergenSize, padding: `${2 * fontScale}px ${6 * fontScale}px` }}
+            >
               {a}
             </span>
           ))}
