@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { MenuData, MenuCategory, MenuItem, PAGE_FORMATS, PRINT_MARGINS, MAX_ITEMS_PER_PAGE } from "@/types/menu";
+import { MenuData, MenuCategory, MenuItem, MenuPage, PAGE_FORMATS, PRINT_MARGINS, MAX_ITEMS_PER_PAGE } from "@/types/menu";
 import { motion } from "framer-motion";
 
 interface MenuPreviewProps {
@@ -13,6 +13,7 @@ interface RenderedPage {
   type: "cover" | "content" | "footer";
   sections?: { categoryName: string; items: MenuItem[]; fontScale: number }[];
   footerText?: string;
+  columns?: number;
 }
 
 /**
@@ -34,14 +35,28 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
     const cats = menuPage.categories.filter((c) => c.items.length > 0);
     if (cats.length === 0) continue;
 
-    // Check if all categories in this page fit together on one rendered page
-    // Allow up to ~8 items combined (with font scaling) when multiple categories share a page
+    const cols = menuPage.columns || 1;
+
+    if (cols >= 2) {
+      // Multi-column page: all categories on one page, font scaled to fit
+      const totalItems = cats.reduce((sum, c) => sum + c.items.length, 0);
+      const maxPerCol = Math.ceil(totalItems / cols);
+      const density = maxPerCol / MAX_ITEMS_PER_PAGE;
+      const fontScale = Math.min(1.1, Math.max(0.5, 1 / density));
+      pages.push({
+        type: "content",
+        columns: cols,
+        sections: cats.map((cat) => ({ categoryName: cat.name, items: cat.items, fontScale })),
+      });
+      continue;
+    }
+
+    // Single-column logic
     const totalItems = cats.reduce((sum, c) => sum + c.items.length, 0);
-    const maxCombined = MAX_ITEMS_PER_PAGE + 2; // 8 items max on a combined page
+    const maxCombined = MAX_ITEMS_PER_PAGE + 2;
     const allFitOnOne = totalItems <= maxCombined && cats.length > 1 && cats.every((c) => !c.pagesSpan || c.pagesSpan === 1);
 
     if (allFitOnOne) {
-      // Combine multiple small categories onto a single page
       const density = totalItems / MAX_ITEMS_PER_PAGE;
       const fontScale = Math.min(1.3, Math.max(0.65, 1 / density));
       pages.push({
@@ -49,7 +64,6 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
         sections: cats.map((cat) => ({ categoryName: cat.name, items: cat.items, fontScale })),
       });
     } else {
-      // Process each category independently
       for (const cat of cats) {
         const naturalPages = autoPageCount(cat.items.length);
         const targetPages = cat.pagesSpan && cat.pagesSpan >= 1 ? cat.pagesSpan : naturalPages;
@@ -142,7 +156,7 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
             </div>
           )}
 
-          {page.type === "content" && page.sections && (
+          {page.type === "content" && page.sections && !page.columns && (
             <div style={contentStyle} className="flex flex-col justify-start h-full">
               <div className="flex-1 flex flex-col">
                 {page.sections.map((section, si) => (
@@ -173,6 +187,53 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
               </div>
               {page.footerText && (
                 <div className="mt-auto pt-4 border-t border-menu-divider/30">
+                  <p className="font-menu text-sm text-menu-description text-center leading-relaxed italic">
+                    {page.footerText}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {page.type === "content" && page.sections && page.columns && page.columns >= 2 && (
+            <div style={contentStyle} className="flex flex-col h-full">
+              <div
+                className="flex-1"
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: `repeat(${page.columns}, 1fr)`,
+                  gap: `0 ${16 * (page.sections[0]?.fontScale || 0.7)}px`,
+                }}
+              >
+                {page.sections.map((section, si) => (
+                  <div key={si} className="flex flex-col">
+                    <div className="text-center mb-3 pt-1">
+                      <div className="menu-ornament w-10 mx-auto mb-2" />
+                      <h2
+                        className="font-display font-semibold text-menu-title tracking-wide"
+                        style={{ fontSize: `${1.2 * section.fontScale}rem` }}
+                      >
+                        {section.categoryName}
+                      </h2>
+                      <div className="menu-ornament w-10 mx-auto mt-2" />
+                    </div>
+                    <div style={{ gap: `${0.5 * section.fontScale}rem`, display: "flex", flexDirection: "column" }}>
+                      {section.items.map((item) => (
+                        <MenuItemRow
+                          key={item.id}
+                          item={item}
+                          fontScale={section.fontScale}
+                          isSelected={selectedItemId === item.id}
+                          onClick={() => onSelectItem?.(item.id)}
+                          compact
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {page.footerText && (
+                <div className="mt-auto pt-4 border-t border-menu-divider/30" style={{ gridColumn: `1 / -1` }}>
                   <p className="font-menu text-sm text-menu-description text-center leading-relaxed italic">
                     {page.footerText}
                   </p>
@@ -220,15 +281,15 @@ function MenuPageContainer({ children, widthPx, heightPx }: { children: React.Re
   );
 }
 
-function MenuItemRow({ item, fontScale, isSelected, onClick }: { item: MenuItem; fontScale: number; isSelected: boolean; onClick: () => void }) {
-  const nameSize = 15 * fontScale;
-  const descSize = 13 * fontScale;
-  const priceSize = 14 * fontScale;
-  const metaSize = 12 * fontScale;
-  const tagSize = 9 * fontScale;
-  const allergenSize = 9 * fontScale;
-  const py = 8 * fontScale;
-  const px = 12 * fontScale;
+function MenuItemRow({ item, fontScale, isSelected, onClick, compact }: { item: MenuItem; fontScale: number; isSelected: boolean; onClick: () => void; compact?: boolean }) {
+  const nameSize = (compact ? 12 : 15) * fontScale;
+  const descSize = (compact ? 10 : 13) * fontScale;
+  const priceSize = (compact ? 11 : 14) * fontScale;
+  const metaSize = (compact ? 9 : 12) * fontScale;
+  const tagSize = (compact ? 7 : 9) * fontScale;
+  const allergenSize = (compact ? 7 : 9) * fontScale;
+  const py = (compact ? 3 : 8) * fontScale;
+  const px = (compact ? 4 : 12) * fontScale;
 
   return (
     <div
