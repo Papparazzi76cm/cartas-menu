@@ -1,5 +1,14 @@
 import { useMemo } from "react";
-import { MenuData, MenuCategory, MenuItem, MenuPage, PAGE_FORMATS, PRINT_MARGINS, MAX_ITEMS_PER_PAGE, PageStyle } from "@/types/menu";
+import {
+  MenuData,
+  MenuCategory,
+  MenuItem,
+  MenuPage,
+  PAGE_FORMATS,
+  PRINT_MARGINS,
+  MAX_ITEMS_PER_PAGE,
+  PageStyle,
+} from "@/types/menu";
 import { motion } from "framer-motion";
 
 interface MenuPreviewProps {
@@ -39,10 +48,8 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
     const cols = menuPage.columns || 1;
 
     if (cols >= 2) {
-      // Multi-column page: all categories on one page
-      // Calculate items per column for font scaling
       const maxItemsPerCol = Math.max(...cats.map((c) => c.items.length));
-      const density = maxItemsPerCol / (MAX_ITEMS_PER_PAGE + 2); // Allow more items in compact mode
+      const density = maxItemsPerCol / (MAX_ITEMS_PER_PAGE + 2);
       const fontScale = Math.min(1.0, Math.max(0.45, 1 / density));
       pages.push({
         type: "content",
@@ -53,10 +60,10 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
       continue;
     }
 
-    // Single-column logic
     const totalItems = cats.reduce((sum, c) => sum + c.items.length, 0);
     const maxCombined = MAX_ITEMS_PER_PAGE + 2;
-    const allFitOnOne = totalItems <= maxCombined && cats.length > 1 && cats.every((c) => !c.pagesSpan || c.pagesSpan === 1);
+    const allFitOnOne =
+      totalItems <= maxCombined && cats.length > 1 && cats.every((c) => !c.pagesSpan || c.pagesSpan === 1);
 
     if (allFitOnOne) {
       const density = totalItems / MAX_ITEMS_PER_PAGE;
@@ -95,7 +102,6 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
     }
   }
 
-  // Attach footer text to the last content page instead of a separate page
   if (menu.footer && pages.length > 1) {
     const lastContent = pages[pages.length - 1];
     if (lastContent.type === "content") {
@@ -146,15 +152,11 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
                 </h1>
               )}
               {menu.subtitle && (
-                <p className="font-menu text-2xl text-menu-subtitle mt-3 italic tracking-widest">
-                  {menu.subtitle}
-                </p>
+                <p className="font-menu text-2xl text-menu-subtitle mt-3 italic tracking-widest">{menu.subtitle}</p>
               )}
               <div className="menu-ornament w-40 my-8" />
               {menu.seasonLabel && (
-                <p className="font-menu text-lg text-menu-subtitle tracking-[0.3em] uppercase">
-                  {menu.seasonLabel}
-                </p>
+                <p className="font-menu text-lg text-menu-subtitle tracking-[0.3em] uppercase">{menu.seasonLabel}</p>
               )}
               {menu.description && (
                 <p className="font-menu text-base text-menu-description mt-8 max-w-md leading-relaxed italic">
@@ -166,7 +168,13 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
           )}
 
           {page.type === "content" && page.sections && !page.columns && (
-            <div style={{ ...contentStyle, ...(page.pageStyle?.fontFamily ? { fontFamily: page.pageStyle.fontFamily } : {}) }} className="flex flex-col justify-start h-full">
+            <div
+              style={{
+                ...contentStyle,
+                ...(page.pageStyle?.fontFamily ? { fontFamily: page.pageStyle.fontFamily } : {}),
+              }}
+              className="flex flex-col justify-start h-full"
+            >
               <div className="flex-1 flex flex-col">
                 {page.sections.map((section, si) => {
                   const ps = page.pageStyle?.fontSize ?? 1;
@@ -187,7 +195,10 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
                         </h2>
                         <div className="menu-ornament w-16 mx-auto mt-4" />
                       </div>
-                      <div className="flex-1" style={{ gap: `${1 * effectiveScale}rem`, display: "flex", flexDirection: "column" }}>
+                      <div
+                        className="flex-1"
+                        style={{ gap: `${1 * effectiveScale}rem`, display: "flex", flexDirection: "column" }}
+                      >
                         {section.items.map((item) => (
                           <MenuItemRow
                             key={item.id}
@@ -273,7 +284,15 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
   );
 }
 
-function MenuPageContainer({ children, widthPx, heightPx }: { children: React.ReactNode; widthPx: number; heightPx: number }) {
+function MenuPageContainer({
+  children,
+  widthPx,
+  heightPx,
+}: {
+  children: React.ReactNode;
+  widthPx: number;
+  heightPx: number;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -292,14 +311,26 @@ function MenuPageContainer({ children, widthPx, heightPx }: { children: React.Re
           bottom: PRINT_MARGINS.bottom * MM_TO_PX * 0.6,
         }}
       />
-      <div className="relative z-10 w-full h-full">
-        {children}
-      </div>
+      <div className="relative z-10 w-full h-full">{children}</div>
     </motion.div>
   );
 }
 
-function MenuItemRow({ item, fontScale, isSelected, onClick, compact, pageStyle }: { item: MenuItem; fontScale: number; isSelected: boolean; onClick: () => void; compact?: boolean; pageStyle?: PageStyle }) {
+function MenuItemRow({
+  item,
+  fontScale,
+  isSelected,
+  onClick,
+  compact,
+  pageStyle,
+}: {
+  item: MenuItem;
+  fontScale: number;
+  isSelected: boolean;
+  onClick: () => void;
+  compact?: boolean;
+  pageStyle?: PageStyle;
+}) {
   const nameSize = (compact ? 12 : 15) * fontScale;
   const descSize = (compact ? 10 : 13) * fontScale;
   const priceSize = (compact ? 11 : 14) * fontScale;
@@ -319,14 +350,23 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact, pageStyle 
       }`}
       style={{ padding: `${py}px ${px}px` }}
     >
+      {/* Tags — FIXED: inline-block + verticalAlign para correcta renderización en PDF */}
       {!compact && item.tags.length > 0 && (
-        <div className="flex gap-1.5 mb-1">
+        <div
+          style={{ marginBottom: `${4 * fontScale}px`, display: "flex", flexWrap: "wrap", gap: `${4 * fontScale}px` }}
+        >
           {item.tags.map((tag) => (
-              <span
-                key={tag}
-                className="font-body font-semibold uppercase tracking-widest bg-menu-tag-bg text-menu-tag-text rounded-sm inline-flex items-center justify-center"
-                style={{ fontSize: tagSize, padding: `${3 * fontScale}px ${8 * fontScale}px`, lineHeight: 1 }}
-              >
+            <span
+              key={tag}
+              className="font-body font-semibold uppercase tracking-widest bg-menu-tag-bg text-menu-tag-text rounded-sm"
+              style={{
+                fontSize: tagSize,
+                padding: `${3 * fontScale}px ${8 * fontScale}px`,
+                lineHeight: 1,
+                display: "inline-block",
+                verticalAlign: "middle",
+              }}
+            >
               {tag}
             </span>
           ))}
@@ -341,10 +381,7 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact, pageStyle 
           {item.name}
         </h3>
         <div className="border-b border-dotted border-menu-divider/50 flex-1 min-w-[8px] mx-0.5 mb-0.5" />
-        <span
-          className="font-body font-semibold text-menu-price whitespace-nowrap"
-          style={{ fontSize: priceSize }}
-        >
+        <span className="font-body font-semibold text-menu-price whitespace-nowrap" style={{ fontSize: priceSize }}>
           {item.price}
         </span>
       </div>
@@ -356,7 +393,9 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact, pageStyle 
       )}
 
       {!compact && item.unit && (
-        <p className="font-body text-menu-description" style={{ fontSize: metaSize, marginTop: 2 * fontScale }}>{item.unit}</p>
+        <p className="font-body text-menu-description" style={{ fontSize: metaSize, marginTop: 2 * fontScale }}>
+          {item.unit}
+        </p>
       )}
 
       {!compact && item.description && (
@@ -368,13 +407,27 @@ function MenuItemRow({ item, fontScale, isSelected, onClick, compact, pageStyle 
         </p>
       )}
 
+      {/* Alérgenos — FIXED: inline-block + lineHeight + gap inline para correcta renderización en PDF */}
       {!compact && item.allergens.length > 0 && (
-        <div className="flex flex-wrap gap-1" style={{ marginTop: 6 * fontScale }}>
+        <div
+          style={{
+            marginTop: 6 * fontScale,
+            display: "flex",
+            flexWrap: "wrap",
+            gap: `${4 * fontScale}px`,
+          }}
+        >
           {item.allergens.map((a) => (
             <span
               key={a}
               className="font-body text-menu-allergen-text bg-menu-allergen-bg rounded"
-              style={{ fontSize: allergenSize, padding: `${2 * fontScale}px ${6 * fontScale}px` }}
+              style={{
+                fontSize: allergenSize,
+                padding: `${2 * fontScale}px ${6 * fontScale}px`,
+                lineHeight: 1,
+                display: "inline-block",
+                verticalAlign: "middle",
+              }}
             >
               {a}
             </span>
