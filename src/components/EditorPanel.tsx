@@ -629,9 +629,14 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
               </DragOverlay>
             </DndContext>
 
-            <Button variant="outline" size="sm" onClick={addPage} className="w-full">
-              <Plus className="w-3.5 h-3.5 mr-1" /> Añadir página
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={addSection} className="flex-1">
+                <Plus className="w-3.5 h-3.5 mr-1" /> Crear sección
+              </Button>
+              <Button variant="outline" size="sm" onClick={addPage} className="flex-1">
+                <Plus className="w-3.5 h-3.5 mr-1" /> Añadir página
+              </Button>
+            </div>
           </div>
         )}
       </div>
