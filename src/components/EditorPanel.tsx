@@ -114,11 +114,15 @@ function SortableCategoryHeader({
   cat,
   isExpanded,
   onToggle,
+  onRename,
 }: {
   cat: MenuCategory;
   isExpanded: boolean;
   onToggle: () => void;
+  onRename: (name: string) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(cat.name);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: `cat-${cat.id}`,
     data: { type: "category", cat },
@@ -130,19 +134,50 @@ function SortableCategoryHeader({
     opacity: isDragging ? 0.4 : 1,
   };
 
+  const commitRename = () => {
+    const trimmed = editName.trim();
+    if (trimmed && trimmed !== cat.name) onRename(trimmed);
+    else setEditName(cat.name);
+    setEditing(false);
+  };
+
   return (
     <div ref={setNodeRef} style={style} className="border-t border-border/50">
       <div className="w-full flex items-center gap-2 px-3 py-2 hover:bg-editor-hover transition-colors text-left">
         <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none">
           <GripVertical className="w-3.5 h-3.5 text-muted-foreground/60" />
         </button>
-        <button onClick={onToggle} className="flex items-center gap-2 flex-1 text-left">
+        <button onClick={onToggle} className="flex-shrink-0">
           {isExpanded ? (
             <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
           ) : (
             <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
           )}
-          <span className="text-xs font-medium text-foreground flex-1">{cat.name}</span>
+        </button>
+        {editing ? (
+          <input
+            autoFocus
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onBlur={commitRename}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitRename();
+              if (e.key === "Escape") { setEditName(cat.name); setEditing(false); }
+            }}
+            className="text-xs font-medium text-foreground flex-1 bg-background border border-input rounded px-1.5 py-0.5 outline-none focus:ring-1 focus:ring-ring"
+          />
+        ) : (
+          <span
+            className="text-xs font-medium text-foreground flex-1 cursor-text"
+            onDoubleClick={() => { setEditName(cat.name); setEditing(true); }}
+          >
+            {cat.name}
+          </span>
+        )}
+        <span className="text-[10px] text-muted-foreground">{cat.items.length}</span>
+      </div>
+    </div>
+  );
           <span className="text-[10px] text-muted-foreground">{cat.items.length}</span>
         </button>
       </div>
