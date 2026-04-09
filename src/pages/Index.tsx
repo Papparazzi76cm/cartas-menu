@@ -3,6 +3,7 @@ import { MenuData, PAGE_FORMATS } from "@/types/menu";
 import { sampleMenu } from "@/data/sampleMenu";
 import { MenuPreview } from "@/components/MenuPreview";
 import { EditorPanel } from "@/components/EditorPanel";
+import { SaveMenuButton, LoadMenuButton } from "@/components/SaveLoadMenu";
 import { Button } from "@/components/ui/button";
 import { Download, Eye, Edit3, Utensils } from "lucide-react";
 import { motion } from "framer-motion";
