@@ -104,7 +104,6 @@ export const sampleMenu: MenuData = {
     {
       id: uid(),
       title: "Carta de Barra",
-      columns: 2,
       categories: [
         {
           id: uid(),

@@ -1,15 +1,50 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { MenuData, PAGE_FORMATS } from "@/types/menu";
 import { sampleMenu } from "@/data/sampleMenu";
 import { MenuPreview } from "@/components/MenuPreview";
 import { EditorPanel } from "@/components/EditorPanel";
 import { SaveMenuButton, LoadMenuButton } from "@/components/SaveLoadMenu";
+import { NewMenuDialog } from "@/components/NewMenuDialog";
+import { MENU_THEMES } from "@/lib/themes";
 import { Button } from "@/components/ui/button";
-import { Download, Eye, Edit3, Utensils } from "lucide-react";
+import { Download, Eye, Edit3, Utensils, Printer } from "lucide-react";
 import { motion } from "framer-motion";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
+
+/** Apply a theme's CSS custom properties + font families */
+function applyTheme(themeId?: string) {
+  const theme = MENU_THEMES.find((t) => t.id === themeId);
+  if (!theme) return;
+
+  const root = document.documentElement;
+  root.style.setProperty("--menu-bg", theme.colors.menuBg);
+  root.style.setProperty("--menu-title", theme.colors.menuTitle);
+  root.style.setProperty("--menu-subtitle", theme.colors.menuSubtitle);
+  root.style.setProperty("--menu-price", theme.colors.menuPrice);
+  root.style.setProperty("--menu-description", theme.colors.menuDescription);
+  root.style.setProperty("--menu-divider", theme.colors.menuDivider);
+  root.style.setProperty("--menu-ornament", theme.colors.menuOrnament);
+  root.style.setProperty("--menu-tag-bg", theme.colors.menuTagBg);
+  root.style.setProperty("--menu-tag-text", theme.colors.menuTagText);
+  root.style.setProperty("--menu-allergen-bg", theme.colors.menuAllergenBg);
+  root.style.setProperty("--menu-allergen-text", theme.colors.menuAllergenText);
+
+  // Load font
+  const existingLink = document.querySelector('link[data-theme-font]');
+  if (existingLink) existingLink.remove();
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = theme.fontImport;
+  link.setAttribute("data-theme-font", "true");
+  document.head.appendChild(link);
+
+  // Apply font families via CSS custom properties
+  root.style.setProperty("--font-display", theme.fonts.display);
+  root.style.setProperty("--font-menu", theme.fonts.menu);
+  root.style.setProperty("--font-body", theme.fonts.body);
+}
 
 export default function Index() {
   const [menu, setMenu] = useState<MenuData>(sampleMenu);
@@ -18,6 +53,13 @@ export default function Index() {
   const [mode, setMode] = useState<"edit" | "preview">("edit");
   const [exporting, setExporting] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // Apply theme when menu changes
+  useEffect(() => {
+    if (menu.themeId) {
+      applyTheme(menu.themeId);
+    }
+  }, [menu.themeId]);
 
   const exportPDF = useCallback(async () => {
     if (!previewRef.current) return;
@@ -50,12 +92,65 @@ export default function Index() {
     } finally {
       setExporting(false);
     }
-  }, [menu.restaurantName]);
+  }, [menu.restaurantName, menu.pageFormat]);
+
+  const handlePrint = useCallback(() => {
+    if (!previewRef.current) return;
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("No se pudo abrir la ventana de impresión");
+      return;
+    }
+
+    const fmt = PAGE_FORMATS[menu.pageFormat];
+    const pages = previewRef.current.querySelectorAll("[data-menu-page]");
+    let pagesHtml = "";
+    pages.forEach((page) => {
+      pagesHtml += `<div class="print-page">${page.outerHTML}</div>`;
+    });
+
+    // Get all stylesheets
+    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
+      .map((el) => el.outerHTML)
+      .join("\n");
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${menu.restaurantName} - Carta</title>
+        ${styles}
+        <style>
+          @page {
+            size: ${fmt.widthMM}mm ${fmt.heightMM}mm;
+            margin: 0;
+          }
+          body { margin: 0; padding: 0; background: white; }
+          .print-page {
+            page-break-after: always;
+            width: ${fmt.widthMM}mm;
+            height: ${fmt.heightMM}mm;
+            overflow: hidden;
+          }
+          .print-page:last-child { page-break-after: avoid; }
+          .print-page > * { box-shadow: none !important; border-radius: 0 !important; border: none !important; }
+        </style>
+      </head>
+      <body>${pagesHtml}</body>
+      </html>
+    `);
+    printWindow.document.close();
+
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 500);
+  }, [menu.restaurantName, menu.pageFormat]);
 
   return (
     <div className="h-screen flex flex-col bg-editor-bg overflow-hidden">
       {/* Top Bar */}
-      <header className="h-14 bg-editor-sidebar border-b border-border flex items-center px-4 gap-4 flex-shrink-0">
+      <header className="h-14 bg-editor-sidebar border-b border-border flex items-center px-4 gap-3 flex-shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
             <Utensils className="w-4 h-4 text-accent-foreground" />
@@ -87,6 +182,14 @@ export default function Index() {
           </button>
         </div>
 
+        <NewMenuDialog
+          onCreate={(newMenu) => {
+            setMenu(newMenu);
+            setCurrentMenuId(null);
+            setSelectedItemId(null);
+          }}
+        />
+
         <SaveMenuButton
           menu={menu}
           currentMenuId={currentMenuId}
@@ -98,6 +201,11 @@ export default function Index() {
             setCurrentMenuId(id);
           }}
         />
+
+        <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1.5">
+          <Printer className="w-3.5 h-3.5" />
+          Imprimir
+        </Button>
 
         <Button
           size="sm"
