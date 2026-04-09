@@ -38,11 +38,11 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
     const cols = menuPage.columns || 1;
 
     if (cols >= 2) {
-      // Multi-column page: all categories on one page, font scaled to fit
-      const totalItems = cats.reduce((sum, c) => sum + c.items.length, 0);
-      const maxPerCol = Math.ceil(totalItems / cols);
-      const density = maxPerCol / MAX_ITEMS_PER_PAGE;
-      const fontScale = Math.min(1.1, Math.max(0.5, 1 / density));
+      // Multi-column page: all categories on one page
+      // Calculate items per column for font scaling
+      const maxItemsPerCol = Math.max(...cats.map((c) => c.items.length));
+      const density = maxItemsPerCol / (MAX_ITEMS_PER_PAGE + 2); // Allow more items in compact mode
+      const fontScale = Math.min(1.0, Math.max(0.45, 1 / density));
       pages.push({
         type: "content",
         columns: cols,
