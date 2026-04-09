@@ -86,6 +86,7 @@ function MenuPageContainer({ children }: { children: React.ReactNode }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
+      data-menu-page
       className="bg-menu-bg w-[595px] min-h-[842px] shadow-xl rounded-sm border border-border/50 relative overflow-hidden flex flex-col"
       style={{ aspectRatio: "210/297" }}
     >
