@@ -239,6 +239,35 @@ function SortableCategoryHeader({
   );
 }
 
+function SortablePageBlock({ page, pi, children }: { page: { id: string }; pi: number; children: React.ReactNode }) {
+  const { setNodeRef, transform, transition, isDragging } = useSortable({
+    id: `page-${page.id}`,
+    data: { type: "page", page },
+  });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className="border border-border rounded-lg overflow-hidden">
+      {children}
+    </div>
+  );
+}
+
+function SortablePageHandle({ pageId }: { pageId: string }) {
+  const { attributes, listeners } = useSortable({
+    id: `page-${pageId}`,
+    data: { type: "page" },
+  });
+  return (
+    <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing touch-none">
+      <GripVertical className="w-3.5 h-3.5 text-muted-foreground/60" />
+    </button>
+  );
+}
+
 function EditableText({ value, onChange, className }: { value: string; onChange: (v: string) => void; className?: string }) {
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState(value);
@@ -402,6 +431,9 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
     return ids;
   }, [menu]);
 
+  // All page sortable IDs
+  const allPageIds = useMemo(() => menu.pages.map((p) => `page-${p.id}`), [menu]);
+
   const handleDragStart = (event: DragStartEvent) => {
     setActiveDragId(event.active.id as string);
   };
@@ -474,13 +506,21 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
       const pages = clonePages(menu);
 
       if (from.pi === to.pi) {
-        // Same page: reorder
         pages[from.pi].categories = arrayMove(pages[from.pi].categories, from.ci, to.ci);
       } else {
-        // Cross-page: move category
         const [movedCat] = pages[from.pi].categories.splice(from.ci, 1);
         pages[to.pi].categories.splice(to.ci, 0, movedCat);
       }
+      onChange({ ...menu, pages });
+      return;
+    }
+
+    // --- Page reorder ---
+    if (activeData?.type === "page") {
+      const fromIdx = menu.pages.findIndex((p) => `page-${p.id}` === active.id);
+      const toIdx = menu.pages.findIndex((p) => `page-${p.id}` === over.id);
+      if (fromIdx === -1 || toIdx === -1) return;
+      const pages = arrayMove(clonePages(menu), fromIdx, toIdx);
       onChange({ ...menu, pages });
     }
   };
@@ -644,21 +684,22 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
             >
-              <SortableContext items={allCatIds} strategy={verticalListSortingStrategy}>
-                <SortableContext items={allItemIds} strategy={verticalListSortingStrategy}>
-                  {menu.pages.map((page, pi) => (
-                    <div key={page.id} className="border border-border rounded-lg overflow-hidden">
-                      <div className="bg-muted/50 px-3 py-2 flex items-center gap-2">
-                        <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-                        <EditableText
-                          value={page.title || `Página ${pi + 1}`}
-                          onChange={(newTitle) => {
-                            const pages = clonePages(menu);
-                            pages[pi].title = newTitle;
-                            onChange({ ...menu, pages });
-                          }}
-                          className="text-xs font-semibold text-foreground flex-1"
-                        />
+              <SortableContext items={allPageIds} strategy={verticalListSortingStrategy}>
+                <SortableContext items={allCatIds} strategy={verticalListSortingStrategy}>
+                  <SortableContext items={allItemIds} strategy={verticalListSortingStrategy}>
+                    {menu.pages.map((page, pi) => (
+                      <SortablePageBlock key={page.id} page={page} pi={pi}>
+                        <div className="bg-muted/50 px-3 py-2 flex items-center gap-2">
+                          <SortablePageHandle pageId={page.id} />
+                          <EditableText
+                            value={page.title || `Página ${pi + 1}`}
+                            onChange={(newTitle) => {
+                              const pages = clonePages(menu);
+                              pages[pi].title = newTitle;
+                              onChange({ ...menu, pages });
+                            }}
+                            className="text-xs font-semibold text-foreground flex-1"
+                          />
                         <button
                           onClick={() => {
                             setExpandedCategories((prev) => {
@@ -770,14 +811,26 @@ export function EditorPanel({ menu, onChange, selectedItemId, onSelectItem }: Ed
                       >
                         <Plus className="w-3 h-3" /> Añadir categoría
                       </button>
-                    </div>
-                  ))}
+                      </SortablePageBlock>
+                    ))}
+                  </SortableContext>
                 </SortableContext>
               </SortableContext>
 
               {/* Drag overlay */}
               <DragOverlay>
-                {activeDragId && !activeDragId.startsWith("cat-") && (() => {
+                {activeDragId && activeDragId.startsWith("page-") && (() => {
+                  const page = menu.pages.find((p) => `page-${p.id}` === activeDragId);
+                  if (!page) return null;
+                  return (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-editor-sidebar shadow-lg rounded border border-accent/30 text-foreground">
+                      <GripVertical className="w-3.5 h-3.5 text-muted-foreground/60" />
+                      <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+                      <span className="text-xs font-semibold flex-1">{page.title || "Página"}</span>
+                    </div>
+                  );
+                })()}
+                {activeDragId && !activeDragId.startsWith("cat-") && !activeDragId.startsWith("page-") && (() => {
                   const loc = findItemLocation(menu, activeDragId);
                   if (!loc) return null;
                   const item = menu.pages[loc.pi].categories[loc.ci].items[loc.ii];
