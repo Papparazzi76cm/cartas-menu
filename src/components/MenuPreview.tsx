@@ -341,6 +341,17 @@ function MenuItemRow({
   const px = (compact ? 4 : 12) * fontScale;
   const titleColor = pageStyle?.color ? { color: `hsl(${pageStyle.color})` } : {};
   const fontFam = pageStyle?.fontFamily ? { fontFamily: pageStyle.fontFamily } : {};
+  const tagGap = 6 * fontScale;
+  const allergenGap = 4 * fontScale;
+  const tagContainerStyle = {
+    ["--badge-gap-x" as any]: `${tagGap}px`,
+    ["--badge-gap-y" as any]: `${tagGap}px`,
+  } as React.CSSProperties;
+  const allergenContainerStyle = {
+    marginTop: 6 * fontScale,
+    ["--badge-gap-x" as any]: `${allergenGap}px`,
+    ["--badge-gap-y" as any]: `${allergenGap}px`,
+  } as React.CSSProperties;
 
   return (
     <div
@@ -351,12 +362,12 @@ function MenuItemRow({
       style={{ padding: `${py}px ${px}px` }}
     >
       {!compact && item.tags.length > 0 && (
-        <div data-badge-container className="flex gap-1.5 mb-1">
+        <div data-badge-container className="flex gap-1.5 mb-1" style={tagContainerStyle}>
           {item.tags.map((tag) => (
             <span
               key={tag}
               data-badge="tag"
-              className="font-body font-semibold uppercase tracking-widest bg-menu-tag-bg text-menu-tag-text rounded-sm inline-flex items-center justify-center"
+              className="font-body font-semibold uppercase tracking-widest bg-menu-tag-bg text-menu-tag-text rounded-sm inline-flex shrink-0 items-center justify-center whitespace-nowrap leading-none"
               style={{ fontSize: tagSize, padding: `${3 * fontScale}px ${8 * fontScale}px`, lineHeight: 1 }}
             >
               {tag}
@@ -401,13 +412,13 @@ function MenuItemRow({
 
       {/* Alérgenos — data-badge permite al exportPDF corregir alineación en el clon */}
       {!compact && item.allergens.length > 0 && (
-        <div data-badge-container className="flex flex-wrap gap-1" style={{ marginTop: 6 * fontScale }}>
+        <div data-badge-container className="flex flex-wrap gap-1" style={allergenContainerStyle}>
           {item.allergens.map((a) => (
             <span
               key={a}
               data-badge="allergen"
-              className="font-body text-menu-allergen-text bg-menu-allergen-bg rounded"
-              style={{ fontSize: allergenSize, padding: `${2 * fontScale}px ${6 * fontScale}px` }}
+              className="font-body text-menu-allergen-text bg-menu-allergen-bg rounded inline-flex shrink-0 items-center justify-center whitespace-nowrap leading-none"
+              style={{ fontSize: allergenSize, padding: `${2 * fontScale}px ${6 * fontScale}px`, lineHeight: 1 }}
             >
               {a}
             </span>

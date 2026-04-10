@@ -46,6 +46,63 @@ function applyTheme(themeId?: string) {
   root.style.setProperty("--font-body", theme.fonts.body);
 }
 
+const PDF_CAPTURE_SCALE = 4;
+
+function waitForStableMenuLayout() {
+  return new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+}
+
+function normalizeClonedBadgeLayout(clonedDoc: Document) {
+  clonedDoc.querySelectorAll<HTMLElement>("[data-badge]").forEach((badge) => {
+    badge.style.display = "inline-flex";
+    badge.style.alignItems = "center";
+    badge.style.justifyContent = "center";
+    badge.style.lineHeight = "1";
+    badge.style.verticalAlign = "top";
+    badge.style.whiteSpace = "nowrap";
+  });
+
+  clonedDoc.querySelectorAll<HTMLElement>("[data-badge-container]").forEach((container) => {
+    const gapX = container.style.getPropertyValue("--badge-gap-x").trim() || "4px";
+    const gapY = container.style.getPropertyValue("--badge-gap-y").trim() || "4px";
+    const wraps = container.classList.contains("flex-wrap");
+
+    container.style.display = "flex";
+    container.style.flexWrap = wraps ? "wrap" : "nowrap";
+    container.style.alignItems = "center";
+    container.style.gap = "0";
+    container.style.marginRight = `-${gapX}`;
+
+    if (wraps) {
+      container.style.marginBottom = `-${gapY}`;
+    }
+
+    Array.from(container.children).forEach((child) => {
+      const badge = child as HTMLElement;
+      badge.style.marginRight = gapX;
+      if (wraps) {
+        badge.style.marginBottom = gapY;
+      }
+    });
+  });
+}
+
+function prepareClonedMenuPage(clonedDoc: Document) {
+  clonedDoc.documentElement.style.cssText = document.documentElement.style.cssText;
+
+  clonedDoc.querySelectorAll<HTMLElement>("[data-menu-page]").forEach((page) => {
+    page.style.borderRadius = "0";
+    page.style.boxShadow = "none";
+    page.style.border = "none";
+    page.style.transform = "none";
+    page.style.opacity = "1";
+  });
+
+  normalizeClonedBadgeLayout(clonedDoc);
+}
+
 export default function Index() {
   const [menu, setMenu] = useState<MenuData>(sampleMenu);
   const [currentMenuId, setCurrentMenuId] = useState<string | null>(null);
@@ -67,10 +124,14 @@ export default function Index() {
     toast.info("Generando PDF...");
 
     try {
-      // 1. Esperar a que todas las fuentes estén completamente cargadas
       await document.fonts.ready;
+      await waitForStableMenuLayout();
 
-      const pages = previewRef.current.querySelectorAll("[data-menu-page]");
+      const pages = Array.from(previewRef.current.querySelectorAll<HTMLElement>("[data-menu-page]"));
+      if (pages.length === 0) {
+        throw new Error("No hay páginas para exportar");
+      }
+
       const fmt = PAGE_FORMATS[menu.pageFormat];
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -79,58 +140,29 @@ export default function Index() {
       });
       const pageWidth = fmt.widthMM;
       const pageHeight = fmt.heightMM;
+      const computedBg = getComputedStyle(document.documentElement).getPropertyValue("--menu-bg").trim();
+      const bgColor = computedBg ? `hsl(${computedBg})` : "#ffffff";
 
       for (let i = 0; i < pages.length; i++) {
-        const el = pages[i] as HTMLElement;
-
-        const prevStyle = el.style.cssText;
-        el.style.borderRadius = "0";
-        el.style.boxShadow = "none";
-        el.style.border = "none";
-
-        // 2. Resolver el color de fondo real desde las CSS variables del tema
-        const computedBg = getComputedStyle(document.documentElement).getPropertyValue("--menu-bg").trim();
-        const bgColor = computedBg ? `hsl(${computedBg})` : "#ffffff";
+        const el = pages[i];
+        const rect = el.getBoundingClientRect();
 
         const canvas = await html2canvas(el, {
-          scale: 2, // 2x es suficiente para impresión de calidad (150-200 dpi efectivos)
+          scale: PDF_CAPTURE_SCALE,
           useCORS: true,
           allowTaint: true,
+          logging: false,
           backgroundColor: bgColor,
-          width: el.offsetWidth,
-          height: el.offsetHeight,
-          windowWidth: window.innerWidth,
-          windowHeight: window.innerHeight,
-          onclone: (clonedDoc) => {
-            // Copiar todas las CSS variables del tema al documento clonado
-            const rootStyles = document.documentElement.style.cssText;
-            clonedDoc.documentElement.style.cssText = rootStyles;
-
-            // Forzar inline-block en cada badge (tag y alérgeno)
-            clonedDoc.querySelectorAll<HTMLElement>("[data-badge]").forEach((badge) => {
-              badge.style.display = "inline-block";
-              badge.style.verticalAlign = "middle";
-              badge.style.lineHeight = "1";
-            });
-
-            // Reemplazar flex+gap en los contenedores por margin en cada hijo
-            // html2canvas tiene soporte limitado para la propiedad gap
-            clonedDoc.querySelectorAll<HTMLElement>("[data-badge-container]").forEach((container) => {
-              container.style.display = "block";
-              Array.from(container.children).forEach((child) => {
-                (child as HTMLElement).style.marginRight = "4px";
-                (child as HTMLElement).style.marginBottom = "4px";
-              });
-            });
-          },
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          onclone: prepareClonedMenuPage,
         });
 
-        el.style.cssText = prevStyle;
-
-        // JPEG con compresión 0.92: calidad visual excelente, tamaño ~10x menor que PNG
-        const imgData = canvas.toDataURL("image/jpeg", 0.92);
+        const imgData = canvas.toDataURL("image/png");
         if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
+        pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
+        canvas.width = 0;
+        canvas.height = 0;
       }
 
       pdf.save(`${menu.restaurantName.replace(/\s+/g, "_")}_carta.pdf`);
