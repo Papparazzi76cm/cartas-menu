@@ -48,59 +48,49 @@ function applyTheme(themeId?: string) {
 
 const PDF_CAPTURE_SCALE = 4;
 
-function waitForStableMenuLayout() {
-  return new Promise<void>((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-  });
-}
+async function waitForStableMenuLayout(container?: HTMLElement | null) {
+  if ("fonts" in document) {
+    await document.fonts.ready;
+  }
 
-function normalizeClonedBadgeLayout(clonedDoc: Document) {
-  clonedDoc.querySelectorAll<HTMLElement>("[data-badge]").forEach((badge) => {
-    badge.style.display = "inline-flex";
-    badge.style.alignItems = "center";
-    badge.style.justifyContent = "center";
-    badge.style.lineHeight = "1";
-    badge.style.verticalAlign = "top";
-    badge.style.whiteSpace = "nowrap";
-  });
+  const images = container ? Array.from(container.querySelectorAll<HTMLImageElement>("img")) : [];
+  await Promise.all(
+    images.map((image) => {
+      if (image.complete) {
+        if (typeof image.decode === "function") {
+          return image.decode().catch(() => undefined);
+        }
 
-  clonedDoc.querySelectorAll<HTMLElement>("[data-badge-container]").forEach((container) => {
-    const gapX = container.style.getPropertyValue("--badge-gap-x").trim() || "4px";
-    const gapY = container.style.getPropertyValue("--badge-gap-y").trim() || "4px";
-    const wraps = container.classList.contains("flex-wrap");
-
-    container.style.display = "flex";
-    container.style.flexWrap = wraps ? "wrap" : "nowrap";
-    container.style.alignItems = "center";
-    container.style.gap = "0";
-    container.style.marginRight = `-${gapX}`;
-
-    if (wraps) {
-      container.style.marginBottom = `-${gapY}`;
-    }
-
-    Array.from(container.children).forEach((child) => {
-      const badge = child as HTMLElement;
-      badge.style.marginRight = gapX;
-      if (wraps) {
-        badge.style.marginBottom = gapY;
+        return Promise.resolve();
       }
-    });
+
+      return new Promise<void>((resolve) => {
+        const done = () => {
+          image.removeEventListener("load", done);
+          image.removeEventListener("error", done);
+          resolve();
+        };
+
+        image.addEventListener("load", done, { once: true });
+        image.addEventListener("error", done, { once: true });
+      });
+    }),
+  );
+
+  await new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   });
 }
 
 function prepareClonedMenuPage(clonedDoc: Document) {
   clonedDoc.documentElement.style.cssText = document.documentElement.style.cssText;
 
-  clonedDoc.querySelectorAll<HTMLElement>("[data-menu-page]").forEach((page) => {
-    page.style.borderRadius = "0";
-    page.style.boxShadow = "none";
-    page.style.border = "none";
+  clonedDoc.querySelectorAll<HTMLElement>("[data-export-root]").forEach((page) => {
     page.style.transform = "none";
     page.style.opacity = "1";
+    page.style.animation = "none";
+    page.style.transition = "none";
   });
-
-  normalizeClonedBadgeLayout(clonedDoc);
 }
 
 export default function Index() {
@@ -124,10 +114,9 @@ export default function Index() {
     toast.info("Generando PDF...");
 
     try {
-      await document.fonts.ready;
-      await waitForStableMenuLayout();
+      await waitForStableMenuLayout(previewRef.current);
 
-      const pages = Array.from(previewRef.current.querySelectorAll<HTMLElement>("[data-menu-page]"));
+      const pages = Array.from(previewRef.current.querySelectorAll<HTMLElement>("[data-export-root]"));
       if (pages.length === 0) {
         throw new Error("No hay páginas para exportar");
       }
@@ -184,7 +173,7 @@ export default function Index() {
     }
 
     const fmt = PAGE_FORMATS[menu.pageFormat];
-    const pages = previewRef.current.querySelectorAll("[data-menu-page]");
+    const pages = previewRef.current.querySelectorAll("[data-export-root]");
     let pagesHtml = "";
     pages.forEach((page) => {
       pagesHtml += `<div class="print-page">${page.outerHTML}</div>`;
@@ -212,9 +201,10 @@ export default function Index() {
             width: ${fmt.widthMM}mm;
             height: ${fmt.heightMM}mm;
             overflow: hidden;
+            display: flex;
           }
           .print-page:last-child { page-break-after: avoid; }
-          .print-page > * { box-shadow: none !important; border-radius: 0 !important; border: none !important; }
+          .print-page > * { width: 100% !important; height: 100% !important; }
         </style>
       </head>
       <body>${pagesHtml}</body>
