@@ -87,6 +87,27 @@
   .font-body {
     font-family: var(--font-body, 'Inter', sans-serif);
   }
+  .menu-badge-row,
+  .menu-badge-wrap {
+    display: flex;
+    gap: 0;
+    margin-right: calc(var(--badge-gap-x, 4px) * -1);
+  }
+  .menu-badge-row {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+  .menu-badge-wrap {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    margin-bottom: calc(var(--badge-gap-y, 4px) * -1);
+  }
+  .menu-badge-item {
+    margin-right: var(--badge-gap-x, 4px);
+  }
+  .menu-badge-wrap > .menu-badge-item {
+    margin-bottom: var(--badge-gap-y, 4px);
+  }
   .menu-ornament {
     background: linear-gradient(90deg, transparent, hsl(var(--menu-ornament)), transparent);
     height: 1px;

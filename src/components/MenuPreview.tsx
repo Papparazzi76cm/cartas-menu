@@ -115,6 +115,11 @@ function paginateMenu(menu: MenuData): RenderedPage[] {
 /** Convert mm to CSS px at 96 DPI (screen) — 1mm ≈ 3.7795px */
 const MM_TO_PX = 3.7795;
 
+function getStackItemStyle(index: number, spacing: string): React.CSSProperties | undefined {
+  if (index === 0) return undefined;
+  return { marginTop: spacing };
+}
+
 export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewProps) {
   const renderedPages = useMemo(() => paginateMenu(menu), [menu]);
   const format = PAGE_FORMATS[menu.pageFormat];
@@ -195,19 +200,17 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
                         </h2>
                         <div className="menu-ornament w-16 mx-auto mt-4" />
                       </div>
-                      <div
-                        className="flex-1"
-                        style={{ gap: `${1 * effectiveScale}rem`, display: "flex", flexDirection: "column" }}
-                      >
-                        {section.items.map((item) => (
-                          <MenuItemRow
-                            key={item.id}
-                            item={item}
-                            fontScale={effectiveScale}
-                            isSelected={selectedItemId === item.id}
-                            onClick={() => onSelectItem?.(item.id)}
-                            pageStyle={page.pageStyle}
-                          />
+                      <div className="flex-1">
+                        {section.items.map((item, itemIndex) => (
+                          <div key={item.id} style={getStackItemStyle(itemIndex, `${1 * effectiveScale}rem`)}>
+                            <MenuItemRow
+                              item={item}
+                              fontScale={effectiveScale}
+                              isSelected={selectedItemId === item.id}
+                              onClick={() => onSelectItem?.(item.id)}
+                              pageStyle={page.pageStyle}
+                            />
+                          </div>
                         ))}
                       </div>
                     </div>
@@ -230,12 +233,19 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
                 className="flex-1"
                 style={{
                   display: "grid",
-                  gridTemplateColumns: `repeat(${page.columns}, 1fr)`,
-                  gap: `0 ${16 * (page.sections[0]?.fontScale || 0.7)}px`,
+                  gridTemplateColumns: `repeat(${page.columns}, minmax(0, 1fr))`,
                 }}
               >
                 {page.sections.map((section, si) => (
-                  <div key={si} className="flex flex-col">
+                  <div
+                    key={si}
+                    className="flex min-w-0 flex-col"
+                    style={
+                      si % page.columns === 0
+                        ? undefined
+                        : { paddingLeft: `${16 * (page.sections[0]?.fontScale || 0.7)}px` }
+                    }
+                  >
                     <div className="text-center mb-3 pt-1">
                       <div className="menu-ornament w-10 mx-auto mb-2" />
                       <h2
@@ -246,16 +256,17 @@ export function MenuPreview({ menu, selectedItemId, onSelectItem }: MenuPreviewP
                       </h2>
                       <div className="menu-ornament w-10 mx-auto mt-2" />
                     </div>
-                    <div style={{ gap: `${0.5 * section.fontScale}rem`, display: "flex", flexDirection: "column" }}>
-                      {section.items.map((item) => (
-                        <MenuItemRow
-                          key={item.id}
-                          item={item}
-                          fontScale={section.fontScale}
-                          isSelected={selectedItemId === item.id}
-                          onClick={() => onSelectItem?.(item.id)}
-                          compact
-                        />
+                    <div>
+                      {section.items.map((item, itemIndex) => (
+                        <div key={item.id} style={getStackItemStyle(itemIndex, `${0.5 * section.fontScale}rem`)}>
+                          <MenuItemRow
+                            item={item}
+                            fontScale={section.fontScale}
+                            isSelected={selectedItemId === item.id}
+                            onClick={() => onSelectItem?.(item.id)}
+                            compact
+                          />
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -299,19 +310,21 @@ function MenuPageContainer({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
       data-menu-page
-      className="bg-menu-bg shadow-xl rounded-sm border border-border/50 relative overflow-hidden"
+      className="relative shadow-xl"
       style={{ width: widthPx, height: heightPx }}
     >
-      <div
-        className="absolute border border-menu-divider/30 pointer-events-none rounded-sm"
-        style={{
-          top: PRINT_MARGINS.top * MM_TO_PX * 0.6,
-          left: PRINT_MARGINS.left * MM_TO_PX * 0.6,
-          right: PRINT_MARGINS.right * MM_TO_PX * 0.6,
-          bottom: PRINT_MARGINS.bottom * MM_TO_PX * 0.6,
-        }}
-      />
-      <div className="relative z-10 w-full h-full">{children}</div>
+      <div data-export-root className="relative w-full h-full bg-menu-bg rounded-sm border border-border/50 overflow-hidden">
+        <div
+          className="absolute border border-menu-divider/30 pointer-events-none rounded-sm"
+          style={{
+            top: PRINT_MARGINS.top * MM_TO_PX * 0.6,
+            left: PRINT_MARGINS.left * MM_TO_PX * 0.6,
+            right: PRINT_MARGINS.right * MM_TO_PX * 0.6,
+            bottom: PRINT_MARGINS.bottom * MM_TO_PX * 0.6,
+          }}
+        />
+        <div className="relative z-10 w-full h-full">{children}</div>
+      </div>
     </motion.div>
   );
 }
@@ -341,6 +354,7 @@ function MenuItemRow({
   const px = (compact ? 4 : 12) * fontScale;
   const titleColor = pageStyle?.color ? { color: `hsl(${pageStyle.color})` } : {};
   const fontFam = pageStyle?.fontFamily ? { fontFamily: pageStyle.fontFamily } : {};
+  const titleGap = 4 * fontScale;
   const tagGap = 6 * fontScale;
   const allergenGap = 4 * fontScale;
   const tagContainerStyle = {
@@ -362,12 +376,12 @@ function MenuItemRow({
       style={{ padding: `${py}px ${px}px` }}
     >
       {!compact && item.tags.length > 0 && (
-        <div data-badge-container className="flex gap-1.5 mb-1" style={tagContainerStyle}>
+        <div data-badge-container className="menu-badge-wrap mb-1" style={tagContainerStyle}>
           {item.tags.map((tag) => (
             <span
               key={tag}
               data-badge="tag"
-              className="font-body font-semibold uppercase tracking-widest bg-menu-tag-bg text-menu-tag-text rounded-sm inline-flex shrink-0 items-center justify-center whitespace-nowrap leading-none"
+              className="menu-badge-item font-body font-semibold uppercase tracking-widest bg-menu-tag-bg text-menu-tag-text rounded-sm inline-flex shrink-0 items-center justify-center whitespace-nowrap leading-none"
               style={{ fontSize: tagSize, padding: `${3 * fontScale}px ${8 * fontScale}px`, lineHeight: 1 }}
             >
               {tag}
@@ -376,14 +390,17 @@ function MenuItemRow({
         </div>
       )}
 
-      <div className="flex items-baseline gap-1">
+      <div className="flex items-baseline min-w-0">
         <h3
           className="font-menu font-semibold text-menu-title leading-snug"
           style={{ fontSize: nameSize, lineHeight: compact ? 1.2 : undefined, ...titleColor, ...fontFam }}
         >
           {item.name}
         </h3>
-        <div className="border-b border-dotted border-menu-divider/50 flex-1 min-w-[8px] mx-0.5 mb-0.5" />
+        <div
+          className="border-b border-dotted border-menu-divider/50 flex-1 min-w-[8px] mb-0.5"
+          style={{ marginLeft: titleGap, marginRight: titleGap }}
+        />
         <span className="font-body font-semibold text-menu-price whitespace-nowrap" style={{ fontSize: priceSize }}>
           {item.price}
         </span>
@@ -410,14 +427,13 @@ function MenuItemRow({
         </p>
       )}
 
-      {/* Alérgenos — data-badge permite al exportPDF corregir alineación en el clon */}
       {!compact && item.allergens.length > 0 && (
-        <div data-badge-container className="flex flex-wrap gap-1" style={allergenContainerStyle}>
+        <div data-badge-container className="menu-badge-wrap" style={allergenContainerStyle}>
           {item.allergens.map((a) => (
             <span
               key={a}
               data-badge="allergen"
-              className="font-body text-menu-allergen-text bg-menu-allergen-bg rounded inline-flex shrink-0 items-center justify-center whitespace-nowrap leading-none"
+              className="menu-badge-item font-body text-menu-allergen-text bg-menu-allergen-bg rounded inline-flex shrink-0 items-center justify-center whitespace-nowrap leading-none"
               style={{ fontSize: allergenSize, padding: `${2 * fontScale}px ${6 * fontScale}px`, lineHeight: 1 }}
             >
               {a}
