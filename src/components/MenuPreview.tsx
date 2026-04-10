@@ -376,7 +376,7 @@ function MenuItemRow({
       style={{ padding: `${py}px ${px}px` }}
     >
       {!compact && item.tags.length > 0 && (
-        <div data-badge-container className="menu-badge-wrap mb-1" style={tagContainerStyle}>
+        <div data-badge-container className="menu-badge-row mb-1" style={tagContainerStyle}>
           {item.tags.map((tag) => (
             <span
               key={tag}
