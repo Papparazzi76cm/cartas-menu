@@ -46,53 +46,6 @@ function applyTheme(themeId?: string) {
   root.style.setProperty("--font-body", theme.fonts.body);
 }
 
-const PDF_CAPTURE_SCALE = 4;
-
-async function waitForStableMenuLayout(container?: HTMLElement | null) {
-  if ("fonts" in document) {
-    await document.fonts.ready;
-  }
-
-  const images = container ? Array.from(container.querySelectorAll<HTMLImageElement>("img")) : [];
-  await Promise.all(
-    images.map((image) => {
-      if (image.complete) {
-        if (typeof image.decode === "function") {
-          return image.decode().catch(() => undefined);
-        }
-
-        return Promise.resolve();
-      }
-
-      return new Promise<void>((resolve) => {
-        const done = () => {
-          image.removeEventListener("load", done);
-          image.removeEventListener("error", done);
-          resolve();
-        };
-
-        image.addEventListener("load", done, { once: true });
-        image.addEventListener("error", done, { once: true });
-      });
-    }),
-  );
-
-  await new Promise<void>((resolve) => {
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-  });
-}
-
-function prepareClonedMenuPage(clonedDoc: Document) {
-  clonedDoc.documentElement.style.cssText = document.documentElement.style.cssText;
-
-  clonedDoc.querySelectorAll<HTMLElement>("[data-export-root]").forEach((page) => {
-    page.style.transform = "none";
-    page.style.opacity = "1";
-    page.style.animation = "none";
-    page.style.transition = "none";
-  });
-}
-
 export default function Index() {
   const [menu, setMenu] = useState<MenuData>(sampleMenu);
   const [currentMenuId, setCurrentMenuId] = useState<string | null>(null);
@@ -114,13 +67,10 @@ export default function Index() {
     toast.info("Generando PDF...");
 
     try {
-      await waitForStableMenuLayout(previewRef.current);
+      // 1. Esperar a que todas las fuentes estén completamente cargadas
+      await document.fonts.ready;
 
-      const pages = Array.from(previewRef.current.querySelectorAll<HTMLElement>("[data-export-root]"));
-      if (pages.length === 0) {
-        throw new Error("No hay páginas para exportar");
-      }
-
+      const pages = previewRef.current.querySelectorAll("[data-menu-page]");
       const fmt = PAGE_FORMATS[menu.pageFormat];
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -129,29 +79,59 @@ export default function Index() {
       });
       const pageWidth = fmt.widthMM;
       const pageHeight = fmt.heightMM;
-      const computedBg = getComputedStyle(document.documentElement).getPropertyValue("--menu-bg").trim();
-      const bgColor = computedBg ? `hsl(${computedBg})` : "#ffffff";
 
       for (let i = 0; i < pages.length; i++) {
-        const el = pages[i];
-        const rect = el.getBoundingClientRect();
+        const el = pages[i] as HTMLElement;
+
+        const prevStyle = el.style.cssText;
+        el.style.borderRadius = "0";
+        el.style.boxShadow = "none";
+        el.style.border = "none";
+
+        // 2. Resolver el color de fondo real desde las CSS variables del tema
+        const computedBg = getComputedStyle(document.documentElement).getPropertyValue("--menu-bg").trim();
+        const bgColor = computedBg ? `hsl(${computedBg})` : "#ffffff";
 
         const canvas = await html2canvas(el, {
-          scale: PDF_CAPTURE_SCALE,
+          scale: 2,
           useCORS: true,
           allowTaint: true,
-          logging: false,
           backgroundColor: bgColor,
-          width: Math.round(rect.width),
-          height: Math.round(rect.height),
-          onclone: prepareClonedMenuPage,
+          width: el.offsetWidth,
+          height: el.offsetHeight,
+          windowWidth: window.innerWidth,
+          windowHeight: window.innerHeight,
+          onclone: (clonedDoc) => {
+            // Copiar todas las CSS variables del tema al documento clonado
+            const rootStyles = document.documentElement.style.cssText;
+            clonedDoc.documentElement.style.cssText = rootStyles;
+
+            // FIX: Forzar inline-block en cada badge con text-align correcto
+            clonedDoc.querySelectorAll<HTMLElement>("[data-badge]").forEach((badge) => {
+              badge.style.display = "inline-block";
+              badge.style.verticalAlign = "middle";
+              badge.style.lineHeight = "normal"; // era "1": colapsaba el alto del texto
+              badge.style.textAlign = "center"; // faltaba: el texto no quedaba centrado
+              badge.style.boxSizing = "border-box"; // padding incluido en las dimensiones del box
+            });
+
+            // FIX: Mantener flex en los contenedores (html2canvas >= 1.4 soporta gap)
+            // antes se cambiaba a "block", lo que rompía la alineación entre badges
+            clonedDoc.querySelectorAll<HTMLElement>("[data-badge-container]").forEach((container) => {
+              container.style.display = "flex";
+              container.style.flexWrap = "wrap";
+              container.style.gap = "4px";
+              container.style.alignItems = "center";
+            });
+          },
         });
 
-        const imgData = canvas.toDataURL("image/png");
+        el.style.cssText = prevStyle;
+
+        // JPEG con compresión 0.92: calidad visual excelente, tamaño ~10x menor que PNG
+        const imgData = canvas.toDataURL("image/jpeg", 0.92);
         if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, 0, pageWidth, pageHeight);
-        canvas.width = 0;
-        canvas.height = 0;
+        pdf.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
       }
 
       pdf.save(`${menu.restaurantName.replace(/\s+/g, "_")}_carta.pdf`);
@@ -173,7 +153,7 @@ export default function Index() {
     }
 
     const fmt = PAGE_FORMATS[menu.pageFormat];
-    const pages = previewRef.current.querySelectorAll("[data-export-root]");
+    const pages = previewRef.current.querySelectorAll("[data-menu-page]");
     let pagesHtml = "";
     pages.forEach((page) => {
       pagesHtml += `<div class="print-page">${page.outerHTML}</div>`;
@@ -201,10 +181,9 @@ export default function Index() {
             width: ${fmt.widthMM}mm;
             height: ${fmt.heightMM}mm;
             overflow: hidden;
-            display: flex;
           }
           .print-page:last-child { page-break-after: avoid; }
-          .print-page > * { width: 100% !important; height: 100% !important; }
+          .print-page > * { box-shadow: none !important; border-radius: 0 !important; border: none !important; }
         </style>
       </head>
       <body>${pagesHtml}</body>
