@@ -164,9 +164,12 @@ export default function Index() {
       .map((el) => el.outerHTML)
       .join("\n");
 
+    // Copy CSS custom properties from the current theme
+    const rootStyles = document.documentElement.style.cssText;
+
     printWindow.document.write(`
       <!DOCTYPE html>
-      <html>
+      <html style="${rootStyles}">
       <head>
         <title>${menu.restaurantName} - Carta</title>
         ${styles}
@@ -174,6 +177,11 @@ export default function Index() {
           @page {
             size: ${fmt.widthMM}mm ${fmt.heightMM}mm;
             margin: 0;
+          }
+          * {
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            color-adjust: exact !important;
           }
           body { margin: 0; padding: 0; background: white; }
           .print-page {
