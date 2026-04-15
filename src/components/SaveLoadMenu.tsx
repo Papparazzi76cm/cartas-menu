@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Save, FolderOpen, Trash2, Clock, FileText } from "lucide-react";
+import { Save, FolderOpen, Trash2, Clock, FileText, Share2 } from "lucide-react";
 
 interface SaveMenuDialogProps {
   menu: MenuData;
