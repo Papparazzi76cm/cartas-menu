@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { MenuData, PAGE_FORMATS } from "@/types/menu";
-import { sampleMenu } from "@/data/sampleMenu";
+import { blankMenu } from "@/data/blankMenu";
 import { MenuPreview } from "@/components/MenuPreview";
 import { EditorPanel } from "@/components/EditorPanel";
 import { SaveMenuButton, LoadMenuButton } from "@/components/SaveLoadMenu";
@@ -47,7 +47,7 @@ function applyTheme(themeId?: string) {
 }
 
 export default function Index() {
-  const [menu, setMenu] = useState<MenuData>(sampleMenu);
+  const [menu, setMenu] = useState<MenuData>(blankMenu);
   const [currentMenuId, setCurrentMenuId] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [mode, setMode] = useState<"edit" | "preview">("edit");
