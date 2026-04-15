@@ -7,7 +7,7 @@ import { SaveMenuButton, LoadMenuButton } from "@/components/SaveLoadMenu";
 import { NewMenuDialog } from "@/components/NewMenuDialog";
 import { MENU_THEMES } from "@/lib/themes";
 import { Button } from "@/components/ui/button";
-import { Download, Eye, Edit3, Utensils, Printer } from "lucide-react";
+import { Download, Eye, Edit3, Utensils, Printer, Plus } from "lucide-react";
 import { motion } from "framer-motion";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -243,6 +243,20 @@ export default function Index() {
             <Eye className="w-3.5 h-3.5" /> Vista previa
           </button>
         </div>
+
+        <Button
+          size="sm"
+          variant="outline"
+          className="gap-1.5"
+          onClick={() => {
+            setMenu({ ...blankMenu, pages: [{ ...blankMenu.pages[0], id: crypto.randomUUID(), categories: [{ ...blankMenu.pages[0].categories[0], id: crypto.randomUUID() }] }] });
+            setCurrentMenuId(null);
+            setSelectedItemId(null);
+          }}
+        >
+          <Plus className="w-3.5 h-3.5" />
+          Nueva carta
+        </Button>
 
         <NewMenuDialog
           onCreate={(newMenu) => {
