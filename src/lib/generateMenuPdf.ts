@@ -1,14 +1,24 @@
 import { createElement } from "react";
+import { flushSync } from "react-dom";
 import { createRoot } from "react-dom/client";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 
+import { MenuPreview } from "@/components/MenuPreview";
 import { MENU_THEMES } from "@/lib/themes";
 import { MenuData, PAGE_FORMATS } from "@/types/menu";
 
+function getMenuBaseName(menuData: MenuData) {
+  return (menuData.restaurantName?.trim() || "carta").replace(/\s+/g, "_");
+}
+
 function getPdfFileName(menuData: MenuData) {
-  const baseName = menuData.restaurantName?.trim() || "carta";
-  return `${baseName.replace(/\s+/g, "_")}_carta.pdf`;
+  return `${getMenuBaseName(menuData)}_carta.pdf`;
+}
+
+function getShareImageFileName(menuData: MenuData, pageIndex: number, totalPages: number) {
+  const suffix = totalPages > 1 ? `_pagina_${pageIndex + 1}` : "";
+  return `${getMenuBaseName(menuData)}_carta${suffix}.png`;
 }
 
 function applyThemeToElement(host: HTMLElement, menuData: MenuData) {
@@ -58,7 +68,7 @@ async function waitForStableMenuLayout(scope: ParentNode) {
           try {
             await image.decode();
           } catch {
-            // Ignore decode failures and continue with the rendered image.
+            // Ignore decode failures and continue.
           }
         }
         return;
@@ -115,6 +125,19 @@ async function capturePageCanvas(target: HTMLElement) {
   }
 }
 
+async function canvasToBlob(canvas: HTMLCanvasElement, type: string) {
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+        return;
+      }
+
+      reject(new Error("No se pudo convertir la imagen"));
+    }, type);
+  });
+}
+
 async function buildPdfFromRoots(exportRoots: HTMLElement[], menuData: MenuData) {
   const format = PAGE_FORMATS[menuData.pageFormat];
   const pdf = new jsPDF({
@@ -137,21 +160,7 @@ async function buildPdfFromRoots(exportRoots: HTMLElement[], menuData: MenuData)
   return pdf;
 }
 
-export async function saveMenuPdfFromPreview(previewRoot: HTMLElement, menuData: MenuData) {
-  await waitForStableMenuLayout(previewRoot);
-  const exportRoots = getExportRoots(previewRoot);
-
-  if (exportRoots.length === 0) {
-    throw new Error("No hay páginas para exportar");
-  }
-
-  const pdf = await buildPdfFromRoots(exportRoots, menuData);
-  pdf.save(getPdfFileName(menuData));
-}
-
-export async function generateMenuPdfBlob(menuData: MenuData): Promise<Blob> {
-  const { MenuPreview } = await import("@/components/MenuPreview");
-
+async function withOffscreenMenu<T>(menuData: MenuData, run: (exportRoots: HTMLElement[]) => Promise<T>) {
   const container = document.createElement("div");
   container.style.position = "fixed";
   container.style.left = "-10000px";
@@ -167,19 +176,56 @@ export async function generateMenuPdfBlob(menuData: MenuData): Promise<Blob> {
   const reactRoot = createRoot(container);
 
   try {
-    reactRoot.render(createElement(MenuPreview, { menu: menuData }));
+    flushSync(() => {
+      reactRoot.render(createElement(MenuPreview, { menu: menuData }));
+    });
+
     await waitForStableMenuLayout(container);
 
     const exportRoots = getExportRoots(container);
     if (exportRoots.length === 0) {
-      throw new Error("No hay páginas para compartir");
+      throw new Error("No hay páginas para exportar");
     }
 
-    const pdf = await buildPdfFromRoots(exportRoots, menuData);
-    return pdf.output("blob");
+    return await run(exportRoots);
   } finally {
     reactRoot.unmount();
     cleanupTheme();
     container.remove();
   }
+}
+
+export async function saveMenuPdfFromPreview(previewRoot: HTMLElement, menuData: MenuData) {
+  await waitForStableMenuLayout(previewRoot);
+  const exportRoots = getExportRoots(previewRoot);
+
+  if (exportRoots.length === 0) {
+    throw new Error("No hay páginas para exportar");
+  }
+
+  const pdf = await buildPdfFromRoots(exportRoots, menuData);
+  pdf.save(getPdfFileName(menuData));
+}
+
+export async function generateMenuPdfBlob(menuData: MenuData): Promise<Blob> {
+  return withOffscreenMenu(menuData, async (exportRoots) => {
+    const pdf = await buildPdfFromRoots(exportRoots, menuData);
+    return pdf.output("blob");
+  });
+}
+
+export async function generateMenuShareFiles(menuData: MenuData): Promise<File[]> {
+  return withOffscreenMenu(menuData, async (exportRoots) => {
+    const files = await Promise.all(
+      exportRoots.map(async (exportRoot, index) => {
+        const canvas = await capturePageCanvas(exportRoot);
+        const blob = await canvasToBlob(canvas, "image/png");
+        return new File([blob], getShareImageFileName(menuData, index, exportRoots.length), {
+          type: "image/png",
+        });
+      }),
+    );
+
+    return files;
+  });
 }
