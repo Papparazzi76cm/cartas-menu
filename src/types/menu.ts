@@ -40,13 +40,14 @@ export interface MenuPage {
   style?: PageStyle;
 }
 
-export type PageFormat = 'A4' | 'A5' | 'A3' | 'Letter';
+export type PageFormat = 'A4' | 'A5' | 'A3' | 'Letter' | 'Custom230';
 
 export const PAGE_FORMATS: Record<PageFormat, { label: string; widthMM: number; heightMM: number }> = {
   A3: { label: 'DIN A3 (297×420 mm)', widthMM: 297, heightMM: 420 },
   A4: { label: 'DIN A4 (210×297 mm)', widthMM: 210, heightMM: 297 },
   A5: { label: 'DIN A5 (148×210 mm)', widthMM: 148, heightMM: 210 },
   Letter: { label: 'US Letter (216×279 mm)', widthMM: 216, heightMM: 279 },
+  Custom230: { label: 'Personalizado (230×297 mm)', widthMM: 230, heightMM: 297 },
 };
 
 /** Safe printable margins in mm */
