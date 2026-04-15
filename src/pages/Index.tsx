@@ -183,15 +183,27 @@ export default function Index() {
             print-color-adjust: exact !important;
             color-adjust: exact !important;
           }
-          body { margin: 0; padding: 0; background: white; }
+          html, body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            width: ${fmt.widthMM}mm;
+          }
           .print-page {
             page-break-after: always;
             width: ${fmt.widthMM}mm;
             height: ${fmt.heightMM}mm;
             overflow: hidden;
+            position: relative;
           }
           .print-page:last-child { page-break-after: avoid; }
-          .print-page > * { box-shadow: none !important; border-radius: 0 !important; border: none !important; }
+          .print-page > * {
+            box-shadow: none !important;
+            border-radius: 0 !important;
+            border: none !important;
+            width: 100% !important;
+            height: 100% !important;
+          }
         </style>
       </head>
       <body>${pagesHtml}</body>
