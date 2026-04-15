@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { MenuData, PAGE_FORMATS, PageFormat } from "@/types/menu";
-import { MENU_THEMES, MenuTheme, createBlankMenu } from "@/lib/themes";
+import { MENU_THEMES, MenuTheme } from "@/lib/themes";
+import { MENU_TEMPLATES, MenuTemplateOption } from "@/data/menuTemplates";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,14 +29,17 @@ export function NewMenuDialog({ onCreate }: NewMenuDialogProps) {
   const [name, setName] = useState("");
   const [format, setFormat] = useState<PageFormat>("A4");
   const [selectedTheme, setSelectedTheme] = useState<string>(MENU_THEMES[0].id);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>("blank");
 
   const theme = MENU_THEMES.find((t) => t.id === selectedTheme) || MENU_THEMES[0];
 
   const handleCreate = () => {
-    const menu = createBlankMenu(name, format, theme);
+    const template = MENU_TEMPLATES.find((t) => t.id === selectedTemplate) || MENU_TEMPLATES[0];
+    const menu = template.buildMenu(name, format, theme.id);
     onCreate(menu);
     setOpen(false);
     setName("");
+    setSelectedTemplate("blank");
   };
 
   return (
@@ -59,6 +63,21 @@ export function NewMenuDialog({ onCreate }: NewMenuDialogProps) {
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
+          </div>
+
+          {/* Template selection */}
+          <div>
+            <label className="text-sm font-medium mb-3 block">Tipo de carta</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {MENU_TEMPLATES.map((t) => (
+                <TemplateCard
+                  key={t.id}
+                  template={t}
+                  isSelected={selectedTemplate === t.id}
+                  onSelect={() => setSelectedTemplate(t.id)}
+                />
+              ))}
+            </div>
           </div>
 
           {/* Format */}
@@ -97,6 +116,26 @@ export function NewMenuDialog({ onCreate }: NewMenuDialogProps) {
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function TemplateCard({ template, isSelected, onSelect }: { template: MenuTemplateOption; isSelected: boolean; onSelect: () => void }) {
+  return (
+    <button
+      onClick={onSelect}
+      className={`relative rounded-lg border-2 p-3 text-center transition-all ${
+        isSelected ? "border-accent ring-2 ring-accent/20 bg-accent/5" : "border-border hover:border-accent/40"
+      }`}
+    >
+      {isSelected && (
+        <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-accent flex items-center justify-center">
+          <Check className="w-2.5 h-2.5 text-accent-foreground" />
+        </div>
+      )}
+      <div className="text-2xl mb-1">{template.icon}</div>
+      <p className="text-xs font-semibold leading-tight">{template.name}</p>
+      <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{template.description}</p>
+    </button>
   );
 }
 
