@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { MenuData } from "@/types/menu";
 import { SavedMenu, saveMenu, updateMenu, listMenus, deleteMenu, loadMenu } from "@/lib/menuStorage";
-import { generateMenuShareFiles } from "@/lib/generateMenuPdf";
+import { generateMenuPdfBlob } from "@/lib/generateMenuPdf";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -161,30 +161,26 @@ export function LoadMenuButton({ onLoad }: LoadMenuDialogProps) {
                   size="sm"
                   variant="ghost"
                   onClick={async () => {
-                    toast.info("Preparando carta para compartir...");
+                    toast.info("Generando PDF para compartir...");
                     try {
-                      const files = await generateMenuShareFiles(m.menu_data);
-                      const canShareFiles =
-                        typeof navigator.share === "function" &&
-                        (typeof navigator.canShare !== "function" || navigator.canShare({ files }));
+                      const blob = await generateMenuPdfBlob(m.menu_data);
+                      const fileName = `${m.name.replace(/\s+/g, "_")}_carta.pdf`;
+                      const file = new File([blob], fileName, { type: "application/pdf" });
 
-                      if (canShareFiles) {
+                      if (navigator.share && navigator.canShare?.({ files: [file] })) {
                         await navigator.share({
                           title: m.name,
-                          files,
+                          files: [file],
                         });
                       } else {
-                        files.forEach((file, index) => {
-                          window.setTimeout(() => {
-                            const url = URL.createObjectURL(file);
-                            const a = document.createElement("a");
-                            a.href = url;
-                            a.download = file.name;
-                            a.click();
-                            window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-                          }, index * 150);
-                        });
-                        toast.success(files.length === 1 ? "Imagen descargada" : "Imágenes descargadas");
+                        // Fallback: descargar el PDF
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = fileName;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast.success("PDF descargado");
                       }
                     } catch (err) {
                       if ((err as Error).name !== "AbortError") {

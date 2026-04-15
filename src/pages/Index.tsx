@@ -6,10 +6,11 @@ import { EditorPanel } from "@/components/EditorPanel";
 import { SaveMenuButton, LoadMenuButton } from "@/components/SaveLoadMenu";
 import { NewMenuDialog } from "@/components/NewMenuDialog";
 import { MENU_THEMES } from "@/lib/themes";
-import { saveMenuPdfFromPreview } from "@/lib/generateMenuPdf";
 import { Button } from "@/components/ui/button";
 import { Download, Eye, Edit3, Utensils, Printer } from "lucide-react";
 import { motion } from "framer-motion";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
 import { toast } from "sonner";
 
 /** Apply a theme's CSS custom properties + font families */
@@ -30,6 +31,7 @@ function applyTheme(themeId?: string) {
   root.style.setProperty("--menu-allergen-bg", theme.colors.menuAllergenBg);
   root.style.setProperty("--menu-allergen-text", theme.colors.menuAllergenText);
 
+  // Load font
   const existingLink = document.querySelector("link[data-theme-font]");
   if (existingLink) existingLink.remove();
   const link = document.createElement("link");
@@ -38,6 +40,7 @@ function applyTheme(themeId?: string) {
   link.setAttribute("data-theme-font", "true");
   document.head.appendChild(link);
 
+  // Apply font families via CSS custom properties
   root.style.setProperty("--font-display", theme.fonts.display);
   root.style.setProperty("--font-menu", theme.fonts.menu);
   root.style.setProperty("--font-body", theme.fonts.body);
@@ -51,6 +54,7 @@ export default function Index() {
   const [exporting, setExporting] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
 
+  // Apply theme when menu changes
   useEffect(() => {
     if (menu.themeId) {
       applyTheme(menu.themeId);
@@ -59,12 +63,78 @@ export default function Index() {
 
   const exportPDF = useCallback(async () => {
     if (!previewRef.current) return;
-
     setExporting(true);
     toast.info("Generando PDF...");
 
     try {
-      await saveMenuPdfFromPreview(previewRef.current, menu);
+      // 1. Esperar a que todas las fuentes estén completamente cargadas
+      await document.fonts.ready;
+
+      const pages = previewRef.current.querySelectorAll("[data-menu-page]");
+      const fmt = PAGE_FORMATS[menu.pageFormat];
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: [fmt.widthMM, fmt.heightMM],
+      });
+      const pageWidth = fmt.widthMM;
+      const pageHeight = fmt.heightMM;
+
+      for (let i = 0; i < pages.length; i++) {
+        const el = pages[i] as HTMLElement;
+
+        const prevStyle = el.style.cssText;
+        el.style.borderRadius = "0";
+        el.style.boxShadow = "none";
+        el.style.border = "none";
+
+        // 2. Resolver el color de fondo real desde las CSS variables del tema
+        const computedBg = getComputedStyle(document.documentElement).getPropertyValue("--menu-bg").trim();
+        const bgColor = computedBg ? `hsl(${computedBg})` : "#ffffff";
+
+        const canvas = await html2canvas(el, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: bgColor,
+          width: el.offsetWidth,
+          height: el.offsetHeight,
+          windowWidth: window.innerWidth,
+          windowHeight: window.innerHeight,
+          onclone: (clonedDoc) => {
+            // Copiar todas las CSS variables del tema al documento clonado
+            const rootStyles = document.documentElement.style.cssText;
+            clonedDoc.documentElement.style.cssText = rootStyles;
+
+            // FIX: Forzar inline-block en cada badge con text-align correcto
+            clonedDoc.querySelectorAll<HTMLElement>("[data-badge]").forEach((badge) => {
+              badge.style.display = "inline-block";
+              badge.style.verticalAlign = "middle";
+              badge.style.lineHeight = "normal"; // era "1": colapsaba el alto del texto
+              badge.style.textAlign = "center"; // faltaba: el texto no quedaba centrado
+              badge.style.boxSizing = "border-box"; // padding incluido en las dimensiones del box
+            });
+
+            // FIX: Mantener flex en los contenedores (html2canvas >= 1.4 soporta gap)
+            // antes se cambiaba a "block", lo que rompía la alineación entre badges
+            clonedDoc.querySelectorAll<HTMLElement>("[data-badge-container]").forEach((container) => {
+              container.style.display = "flex";
+              container.style.flexWrap = "wrap";
+              container.style.gap = "4px";
+              container.style.alignItems = "center";
+            });
+          },
+        });
+
+        el.style.cssText = prevStyle;
+
+        // JPEG con compresión 0.92: calidad visual excelente, tamaño ~10x menor que PNG
+        const imgData = canvas.toDataURL("image/jpeg", 0.92);
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
+      }
+
+      pdf.save(`${menu.restaurantName.replace(/\s+/g, "_")}_carta.pdf`);
       toast.success("PDF exportado correctamente");
     } catch (err) {
       toast.error("Error al exportar PDF");
@@ -72,7 +142,7 @@ export default function Index() {
     } finally {
       setExporting(false);
     }
-  }, [menu]);
+  }, [menu.restaurantName, menu.pageFormat]);
 
   const handlePrint = useCallback(() => {
     if (!previewRef.current) return;
