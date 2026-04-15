@@ -11,7 +11,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Save, FolderOpen, Trash2, Clock, FileText } from "lucide-react";
+import { Save, FolderOpen, Trash2, Clock, FileText, Share2 } from "lucide-react";
 
 interface SaveMenuDialogProps {
   menu: MenuData;
@@ -155,6 +155,31 @@ export function LoadMenuButton({ onLoad }: LoadMenuDialogProps) {
               <div className="flex gap-1">
                 <Button size="sm" variant="ghost" onClick={() => handleLoad(m.id)}>
                   Abrir
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={async () => {
+                    const shareUrl = `${window.location.origin}/?menu=${m.id}`;
+                    if (navigator.share) {
+                      try {
+                        await navigator.share({
+                          title: m.name,
+                          text: `Carta: ${m.name}`,
+                          url: shareUrl,
+                        });
+                      } catch (err) {
+                        if ((err as Error).name !== "AbortError") {
+                          toast.error("Error al compartir");
+                        }
+                      }
+                    } else {
+                      await navigator.clipboard.writeText(shareUrl);
+                      toast.success("Enlace copiado al portapapeles");
+                    }
+                  }}
+                >
+                  <Share2 className="w-3.5 h-3.5" />
                 </Button>
                 <Button
                   size="sm"
