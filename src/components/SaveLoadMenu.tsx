@@ -159,6 +159,31 @@ export function LoadMenuButton({ onLoad }: LoadMenuDialogProps) {
                 <Button
                   size="sm"
                   variant="ghost"
+                  onClick={async () => {
+                    const shareUrl = `${window.location.origin}/?menu=${m.id}`;
+                    if (navigator.share) {
+                      try {
+                        await navigator.share({
+                          title: m.name,
+                          text: `Carta: ${m.name}`,
+                          url: shareUrl,
+                        });
+                      } catch (err) {
+                        if ((err as Error).name !== "AbortError") {
+                          toast.error("Error al compartir");
+                        }
+                      }
+                    } else {
+                      await navigator.clipboard.writeText(shareUrl);
+                      toast.success("Enlace copiado al portapapeles");
+                    }
+                  }}
+                >
+                  <Share2 className="w-3.5 h-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
                   className="text-destructive hover:text-destructive"
                   onClick={() => handleDelete(m.id)}
                 >
