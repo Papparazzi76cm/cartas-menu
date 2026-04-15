@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { MenuData } from "@/types/menu";
 import { SavedMenu, saveMenu, updateMenu, listMenus, deleteMenu, loadMenu } from "@/lib/menuStorage";
+import { generateMenuPdfBlob } from "@/lib/generateMenuPdf";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
