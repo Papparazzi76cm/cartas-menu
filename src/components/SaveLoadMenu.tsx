@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { MenuData } from "@/types/menu";
 import { SavedMenu, saveMenu, updateMenu, listMenus, deleteMenu, loadMenu } from "@/lib/menuStorage";
+import { generateMenuPdfBlob } from "@/lib/generateMenuPdf";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -160,22 +161,32 @@ export function LoadMenuButton({ onLoad }: LoadMenuDialogProps) {
                   size="sm"
                   variant="ghost"
                   onClick={async () => {
-                    const shareUrl = `${window.location.origin}/?menu=${m.id}`;
-                    if (navigator.share) {
-                      try {
+                    toast.info("Generando PDF para compartir...");
+                    try {
+                      const blob = await generateMenuPdfBlob(m.menu_data);
+                      const fileName = `${m.name.replace(/\s+/g, "_")}_carta.pdf`;
+                      const file = new File([blob], fileName, { type: "application/pdf" });
+
+                      if (navigator.share && navigator.canShare?.({ files: [file] })) {
                         await navigator.share({
                           title: m.name,
-                          text: `Carta: ${m.name}`,
-                          url: shareUrl,
+                          files: [file],
                         });
-                      } catch (err) {
-                        if ((err as Error).name !== "AbortError") {
-                          toast.error("Error al compartir");
-                        }
+                      } else {
+                        // Fallback: descargar el PDF
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = fileName;
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        toast.success("PDF descargado");
                       }
-                    } else {
-                      await navigator.clipboard.writeText(shareUrl);
-                      toast.success("Enlace copiado al portapapeles");
+                    } catch (err) {
+                      if ((err as Error).name !== "AbortError") {
+                        toast.error("Error al compartir");
+                        console.error(err);
+                      }
                     }
                   }}
                 >
