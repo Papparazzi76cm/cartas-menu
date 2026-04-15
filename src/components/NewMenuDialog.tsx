@@ -43,7 +43,7 @@ export function NewMenuDialog({ onCreate }: NewMenuDialogProps) {
       <DialogTrigger asChild>
         <Button size="sm" variant="outline" className="gap-1.5">
           <FilePlus2 className="w-3.5 h-3.5" />
-          Nueva carta
+          Plantillas
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
