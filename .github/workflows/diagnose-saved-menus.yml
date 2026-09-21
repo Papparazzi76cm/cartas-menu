@@ -1,0 +1,46 @@
+name: Diagnose saved menus backend
+
+on:
+  push:
+    branches:
+      - diagnose-saved-menus
+
+jobs:
+  check-backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check saved_menus endpoint without exposing data
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL=$(grep '^VITE_SUPABASE_URL=' .env | cut -d'"' -f2)
+          KEY=$(grep '^VITE_SUPABASE_PUBLISHABLE_KEY=' .env | cut -d'"' -f2)
+
+          HTTP=$(curl --silent --show-error --max-time 20 \
+            --output /tmp/saved_menus.json \
+            --write-out '%{http_code}' \
+            -H "apikey: ${KEY}" \
+            -H "Authorization: Bearer ${KEY}" \
+            "${URL}/rest/v1/saved_menus?select=id") || CURL_EXIT=$?
+
+          if [ -n "${CURL_EXIT:-}" ]; then
+            echo "curl_exit=${CURL_EXIT}"
+            exit 2
+          fi
+
+          echo "http_status=${HTTP}"
+          if [ "${HTTP}" != "200" ]; then
+            echo "response_bytes=$(wc -c < /tmp/saved_menus.json)"
+            exit 3
+          fi
+
+          python - <<'PY'
+          import json
+          with open('/tmp/saved_menus.json', 'r', encoding='utf-8') as f:
+              data = json.load(f)
+          print(f"saved_menus_count={len(data)}")
+          PY
