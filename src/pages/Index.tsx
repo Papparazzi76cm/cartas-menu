@@ -49,6 +49,8 @@ function applyTheme(themeId?: string) {
 }
 
 export default function Index() {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [menu, setMenu] = useState<MenuData>(blankMenu);
   const [currentMenuId, setCurrentMenuId] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
