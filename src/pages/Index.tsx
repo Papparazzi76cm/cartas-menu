@@ -12,6 +12,8 @@ import { motion } from "framer-motion";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 /** Apply a theme's CSS custom properties + font families */
 function applyTheme(themeId?: string) {
