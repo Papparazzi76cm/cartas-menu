@@ -12,6 +12,8 @@ import { motion } from "framer-motion";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
 
 /** Apply a theme's CSS custom properties + font families */
 function applyTheme(themeId?: string) {
@@ -47,6 +49,8 @@ function applyTheme(themeId?: string) {
 }
 
 export default function Index() {
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
   const [menu, setMenu] = useState<MenuData>(blankMenu);
   const [currentMenuId, setCurrentMenuId] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -278,13 +282,24 @@ export default function Index() {
           }}
         />
 
-        <SaveMenuButton menu={menu} currentMenuId={currentMenuId} onSaved={(saved) => setCurrentMenuId(saved.id)} />
-        <LoadMenuButton
-          onLoad={(loadedMenu, id) => {
-            setMenu(loadedMenu);
-            setCurrentMenuId(id);
-          }}
-        />
+        {user ? (
+          <>
+            <SaveMenuButton menu={menu} currentMenuId={currentMenuId} onSaved={(saved) => setCurrentMenuId(saved.id)} />
+            <LoadMenuButton
+              onLoad={(loadedMenu, id) => {
+                setMenu(loadedMenu);
+                setCurrentMenuId(id);
+              }}
+            />
+            <Button size="sm" variant="ghost" onClick={signOut}>
+              Salir
+            </Button>
+          </>
+        ) : (
+          <Button size="sm" variant="outline" onClick={() => navigate("/auth")}>
+            Acceder para guardar
+          </Button>
+        )}
 
         <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1.5">
           <Printer className="w-3.5 h-3.5" />
