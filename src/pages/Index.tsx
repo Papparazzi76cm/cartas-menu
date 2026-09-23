@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { MenuData, PAGE_FORMATS } from "@/types/menu";
 import { blankMenu } from "@/data/blankMenu";
-import { MenuPreview } from "@/components/MenuPreview";
+import { MultilingualMenuPreview } from "@/components/MultilingualMenuPreview";
 import { EditorPanel } from "@/components/EditorPanel";
 import { SaveMenuButton, LoadMenuButton } from "@/components/SaveLoadMenu";
 import { NewMenuDialog } from "@/components/NewMenuDialog";
@@ -338,7 +338,7 @@ export default function Index() {
         {/* Preview Area */}
         <div className="flex-1 overflow-y-auto scrollbar-thin bg-editor-bg">
           <div ref={previewRef} className="flex flex-col items-center">
-            <MenuPreview
+            <MultilingualMenuPreview
               menu={menu}
               selectedItemId={mode === "edit" ? selectedItemId : null}
               onSelectItem={mode === "edit" ? setSelectedItemId : undefined}
