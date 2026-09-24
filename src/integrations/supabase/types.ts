@@ -46,7 +46,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_legacy_menus: { Args: { recovery_code: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
