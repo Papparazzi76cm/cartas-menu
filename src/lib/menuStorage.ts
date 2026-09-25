@@ -52,11 +52,3 @@ export async function loadMenu(id: string): Promise<SavedMenu> {
   if (error) throw error;
   return data as any as SavedMenu;
 }
-
-/** Reclama las cartas antiguas sin propietario con un código de un solo uso. Devuelve cuántas se asignaron. */
-export async function claimLegacyMenus(code: string): Promise<number> {
-  await requireUserId();
-  const { data, error } = await (supabase.rpc as any)("claim_legacy_menus", { recovery_code: code.trim() });
-  if (error) throw new Error(error.message || "No se pudo recuperar las cartas");
-  return Number(data ?? 0);
-}

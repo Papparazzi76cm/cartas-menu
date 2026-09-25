@@ -36,7 +36,7 @@ vi.mock("@/integrations/supabase/client", () => {
   };
 });
 
-import { saveMenu, updateMenu, loadMenu, listMenus, claimLegacyMenus } from "@/lib/menuStorage";
+import { saveMenu, updateMenu, loadMenu, listMenus } from "@/lib/menuStorage";
 
 const menu: MenuData = {
   restaurantName: "Los Molinos",
@@ -68,11 +68,4 @@ describe("menuStorage", () => {
     await expect(listMenus()).rejects.toMatchObject({ message: "Failed to fetch" });
   });
 
-  it("recuperar llama a la función y propaga errores reales", async () => {
-    state.rpc = vi.fn().mockResolvedValue({ data: 3, error: null });
-    expect(await claimLegacyMenus("  abcdefabcdefabcdef  ")).toBe(3);
-    expect(state.rpc).toHaveBeenCalledWith("claim_legacy_menus", { recovery_code: "abcdefabcdefabcdef" });
-    state.rpc = vi.fn().mockResolvedValue({ data: null, error: { message: "Código no válido o ya utilizado" } });
-    await expect(claimLegacyMenus("abcdefabcdefabcdef")).rejects.toThrow("ya utilizado");
-  });
 });

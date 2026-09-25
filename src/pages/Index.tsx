@@ -279,12 +279,12 @@ export default function Index() {
         />
 
         <SaveMenuButton menu={menu} currentMenuId={currentMenuId} onSaved={(saved) => setCurrentMenuId(saved.id)} />
-            <LoadMenuButton
-              onLoad={(loadedMenu, id) => {
-                setMenu(loadedMenu);
-                setCurrentMenuId(id);
-              }}
-            />
+        <LoadMenuButton
+          onLoad={(loadedMenu, id) => {
+            setMenu(loadedMenu);
+            setCurrentMenuId(id);
+          }}
+        />
 
         <Button size="sm" variant="outline" onClick={handlePrint} className="gap-1.5">
           <Printer className="w-3.5 h-3.5" />
