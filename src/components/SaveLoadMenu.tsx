@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MenuData } from "@/types/menu";
-import { SavedMenu, saveMenu, updateMenu, listMenus, deleteMenu, loadMenu } from "@/lib/menuStorage";
+import { SavedMenu, SavedMenuSummary, saveMenu, updateMenu, listMenus, deleteMenu, loadMenu } from "@/lib/menuStorage";
 import { generateMenuPdfBlob } from "@/lib/generateMenuPdf";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -86,7 +86,7 @@ interface LoadMenuDialogProps {
 
 export function LoadMenuButton({ onLoad }: LoadMenuDialogProps) {
   const [open, setOpen] = useState(false);
-  const [menus, setMenus] = useState<SavedMenu[]>([]);
+  const [menus, setMenus] = useState<SavedMenuSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -177,7 +177,8 @@ export function LoadMenuButton({ onLoad }: LoadMenuDialogProps) {
                   onClick={async () => {
                     toast.info("Generando PDF para compartir...");
                     try {
-                      const blob = await generateMenuPdfBlob(m.menu_data);
+                      const full = await loadMenu(m.id);
+                      const blob = await generateMenuPdfBlob(full.menu_data);
                       const fileName = `${m.name.replace(/\s+/g, "_")}_carta.pdf`;
                       const file = new File([blob], fileName, { type: "application/pdf" });
 
