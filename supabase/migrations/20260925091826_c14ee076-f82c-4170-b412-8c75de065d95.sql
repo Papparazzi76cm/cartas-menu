@@ -1,0 +1,11 @@
+DROP POLICY IF EXISTS "Users can create their own menus" ON public.saved_menus;
+DROP POLICY IF EXISTS "Users can delete their own menus" ON public.saved_menus;
+DROP POLICY IF EXISTS "Users can update their own menus" ON public.saved_menus;
+DROP POLICY IF EXISTS "Users can view their own menus" ON public.saved_menus;
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.saved_menus TO anon, authenticated;
+GRANT ALL ON public.saved_menus TO service_role;
+ALTER TABLE public.saved_menus ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read menus" ON public.saved_menus FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "Public insert menus" ON public.saved_menus FOR INSERT TO anon, authenticated WITH CHECK (true);
+CREATE POLICY "Public update menus" ON public.saved_menus FOR UPDATE TO anon, authenticated USING (true) WITH CHECK (true);
+CREATE POLICY "Public delete menus" ON public.saved_menus FOR DELETE TO anon, authenticated USING (true);

@@ -9,17 +9,10 @@ export interface SavedMenu {
   updated_at: string;
 }
 
-async function requireUserId(): Promise<string> {
-  const { data, error } = await supabase.auth.getUser();
-  if (error || !data.user) throw new Error("Debes iniciar sesión para gestionar tus cartas");
-  return data.user.id;
-}
-
 export async function saveMenu(name: string, menuData: MenuData): Promise<SavedMenu> {
-  const userId = await requireUserId();
   const { data, error } = await supabase
     .from("saved_menus")
-    .insert({ name, menu_data: menuData as any, user_id: userId })
+    .insert({ name, menu_data: menuData as any })
     .select()
     .single();
 
@@ -28,7 +21,6 @@ export async function saveMenu(name: string, menuData: MenuData): Promise<SavedM
 }
 
 export async function updateMenu(id: string, name: string, menuData: MenuData): Promise<SavedMenu> {
-  await requireUserId();
   const { data, error } = await supabase
     .from("saved_menus")
     .update({ name, menu_data: menuData as any, updated_at: new Date().toISOString() })
@@ -59,12 +51,4 @@ export async function loadMenu(id: string): Promise<SavedMenu> {
   const { data, error } = await supabase.from("saved_menus").select("*").eq("id", id).single();
   if (error) throw error;
   return data as any as SavedMenu;
-}
-
-/** Reclama las cartas antiguas sin propietario con un código de un solo uso. Devuelve cuántas se asignaron. */
-export async function claimLegacyMenus(code: string): Promise<number> {
-  await requireUserId();
-  const { data, error } = await (supabase.rpc as any)("claim_legacy_menus", { recovery_code: code.trim() });
-  if (error) throw new Error(error.message || "No se pudo recuperar las cartas");
-  return Number(data ?? 0);
 }

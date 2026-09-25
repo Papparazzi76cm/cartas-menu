@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { MenuData } from "@/types/menu";
-import { SavedMenu, saveMenu, updateMenu, listMenus, deleteMenu, loadMenu, claimLegacyMenus } from "@/lib/menuStorage";
+import { SavedMenu, saveMenu, updateMenu, listMenus, deleteMenu, loadMenu } from "@/lib/menuStorage";
 import { generateMenuPdfBlob } from "@/lib/generateMenuPdf";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -89,9 +89,6 @@ export function LoadMenuButton({ onLoad }: LoadMenuDialogProps) {
   const [menus, setMenus] = useState<SavedMenu[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [showRecover, setShowRecover] = useState(false);
-  const [code, setCode] = useState("");
-  const [claiming, setClaiming] = useState(false);
 
   const refresh = async () => {
     setLoading(true);
@@ -108,21 +105,6 @@ export function LoadMenuButton({ onLoad }: LoadMenuDialogProps) {
   useEffect(() => {
     if (open) refresh();
   }, [open]);
-
-  const handleClaim = async () => {
-    setClaiming(true);
-    try {
-      const n = await claimLegacyMenus(code);
-      toast.success(n > 0 ? `${n} carta(s) recuperada(s)` : "No había cartas pendientes de recuperar");
-      setCode("");
-      setShowRecover(false);
-      await refresh();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "No se pudo recuperar las cartas");
-    } finally {
-      setClaiming(false);
-    }
-  };
 
   const handleLoad = async (id: string) => {
     try {
@@ -235,29 +217,6 @@ export function LoadMenuButton({ onLoad }: LoadMenuDialogProps) {
               </div>
             </div>
           ))}
-        </div>
-        <div className="border-t border-border pt-3">
-          {!showRecover ? (
-            <button
-              type="button"
-              className="text-xs text-muted-foreground hover:text-foreground underline-offset-2 hover:underline"
-              onClick={() => setShowRecover(true)}
-            >
-              Recuperar cartas anteriores
-            </button>
-          ) : (
-            <div className="flex gap-2">
-              <Input
-                placeholder="Código de recuperación"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                autoComplete="off"
-              />
-              <Button size="sm" onClick={handleClaim} disabled={claiming || code.trim().length < 16}>
-                {claiming ? "Recuperando…" : "Recuperar"}
-              </Button>
-            </div>
-          )}
         </div>
       </DialogContent>
     </Dialog>
