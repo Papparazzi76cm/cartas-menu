@@ -32,14 +32,17 @@ export async function updateMenu(id: string, name: string, menuData: MenuData): 
   return data as any as SavedMenu;
 }
 
-export async function listMenus(): Promise<SavedMenu[]> {
+export type SavedMenuSummary = Pick<SavedMenu, "id" | "name" | "created_at" | "updated_at">;
+
+/** Solo metadatos: el JSON completo (con logos en base64) puede pesar varios MB. */
+export async function listMenus(): Promise<SavedMenuSummary[]> {
   const { data, error } = await supabase
     .from("saved_menus")
-    .select("*")
+    .select("id, name, created_at, updated_at")
     .order("updated_at", { ascending: false });
 
   if (error) throw error;
-  return (data || []) as any as SavedMenu[];
+  return (data || []) as any as SavedMenuSummary[];
 }
 
 export async function deleteMenu(id: string): Promise<void> {
