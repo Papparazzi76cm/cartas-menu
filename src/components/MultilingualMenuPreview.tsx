@@ -96,6 +96,9 @@ export function MultilingualMenuPreview({
 
     const frame = window.requestAnimationFrame(() => {
       root.querySelectorAll("p").forEach((paragraph) => {
+        // Preserve intentional paragraph breaks in cover copy, including the Los Molinos philosophy.
+        paragraph.style.whiteSpace = "pre-line";
+
         const text = paragraph.textContent?.trim() ?? "";
         const separatorIndex = text.indexOf(":");
         if (separatorIndex === -1) return;
