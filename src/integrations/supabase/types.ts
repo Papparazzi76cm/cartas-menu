@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      published_restaurant_menus: {
+        Row: {
+          menu_data: Json
+          slug: string
+          source_menu_id: string
+          updated_at: string
+        }
+        Insert: {
+          menu_data: Json
+          slug: string
+          source_menu_id: string
+          updated_at?: string
+        }
+        Update: {
+          menu_data?: Json
+          slug?: string
+          source_menu_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "published_restaurant_menus_source_menu_id_fkey"
+            columns: ["source_menu_id"]
+            isOneToOne: false
+            referencedRelation: "saved_menus"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_menus: {
         Row: {
           created_at: string
