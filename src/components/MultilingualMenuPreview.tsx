@@ -14,13 +14,36 @@ interface MultilingualMenuPreviewProps {
   onSelectItem?: (id: string) => void;
 }
 
+const LOS_MOLINOS_SHARING_PHILOSOPHY = [
+  "En Los Molinos entendemos la mesa como un lugar para compartir.",
+  "Por eso, nuestra carta está pensada para disfrutar los platos en el centro de la mesa, probando, compartiendo y descubriendo diferentes sabores entre todos.",
+  "Una forma más dinámica y distendida de disfrutar nuestra cocina, donde cada plato forma parte de una experiencia común.",
+].join("\n\n");
+
+const LOS_MOLINOS_PHILOSOPHY_MARKER = "En Los Molinos entendemos la mesa como un lugar para compartir.";
+
 export function MultilingualMenuPreview({
   menu,
   selectedItemId,
   onSelectItem,
 }: MultilingualMenuPreviewProps) {
+  const menuForPreview = useMemo<MenuData>(() => {
+    const isLosMolinos = menu.restaurantName.trim().toLocaleLowerCase("es") === "los molinos";
+    if (!isLosMolinos) return menu;
+
+    const currentDescription = (menu.description || "").trim();
+    if (currentDescription.includes(LOS_MOLINOS_PHILOSOPHY_MARKER)) return menu;
+
+    return {
+      ...menu,
+      description: currentDescription
+        ? `${currentDescription}\n\n${LOS_MOLINOS_SHARING_PHILOSOPHY}`
+        : LOS_MOLINOS_SHARING_PHILOSOPHY,
+    };
+  }, [menu]);
+
   const [language, setLanguage] = useState<MenuLanguage>("es");
-  const [translatedMenu, setTranslatedMenu] = useState<MenuData>(menu);
+  const [translatedMenu, setTranslatedMenu] = useState<MenuData>(menuForPreview);
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationError, setTranslationError] = useState(false);
   const previewRootRef = useRef<HTMLDivElement>(null);
@@ -30,7 +53,7 @@ export function MultilingualMenuPreview({
     let timer: number | undefined;
 
     if (language === "es") {
-      setTranslatedMenu(menu);
+      setTranslatedMenu(menuForPreview);
       setIsTranslating(false);
       setTranslationError(false);
       return () => {
@@ -43,14 +66,14 @@ export function MultilingualMenuPreview({
 
     // Small debounce prevents a request burst while the user is actively editing Spanish content.
     timer = window.setTimeout(() => {
-      translateMenuContent(menu, language)
+      translateMenuContent(menuForPreview, language)
         .then((result) => {
           if (!cancelled) setTranslatedMenu(result);
         })
         .catch((error) => {
           console.error("No se pudo traducir la carta", error);
           if (!cancelled) {
-            setTranslatedMenu(menu);
+            setTranslatedMenu(menuForPreview);
             setTranslationError(true);
           }
         })
@@ -63,7 +86,7 @@ export function MultilingualMenuPreview({
       cancelled = true;
       if (timer) window.clearTimeout(timer);
     };
-  }, [menu, language]);
+  }, [menuForPreview, language]);
 
   // "½ ración" is template copy rendered by the existing preview component rather than MenuData.
   // Keep it multilingual too, without translating any CartaStudio application controls.
